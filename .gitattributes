@@ -1,0 +1,8 @@
+# Hide certain files from Github PRs
+# https://github.com/github/linguist#using-gitattributes
+
+# vendored dependencies
+vendor/** linguist-vendored=true
+
+# generated mocks
+mocks/** linguist-vendored=true
