@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/textproto"
 	"time"
 
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
@@ -16,7 +17,7 @@ const (
 )
 
 func Dial(ctx context.Context, address string, options ...DialOption) (connection.Connection, error) {
-	dialOpts := newDialOptions()
+	dialOpts := NewDialOptions()
 	for _, option := range options {
 		if err := option(dialOpts); err != nil {
 			return nil, err
@@ -46,8 +47,14 @@ func Dial(ctx context.Context, address string, options ...DialOption) (connectio
 	if err != nil {
 		return nil, errors.NewInternalError(fmt.Sprintf("failed dial FTP server on [%s] address", address), err)
 	}
+	remoteAddr := tcpConn.RemoteAddr().(*net.TCPAddr)
 
-	conn := newConnection(tcpConn, dialOpts)
+	textConn := textproto.NewConn(dialOpts.wrapConnection(tcpConn))
+
+	conn, err := newConnection(remoteAddr.IP.String(), tcpConn, textConn, dialOpts)
+	if err != nil {
+		return nil, err
+	}
 	if err = conn.Ready(); err != nil {
 		return nil, err
 	}

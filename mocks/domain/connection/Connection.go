@@ -79,13 +79,13 @@ func (_m *Connection) Login(user string, password string) error {
 	return r0
 }
 
-// Mkdir provides a mock function with given fields: options
-func (_m *Connection) Mkdir(options *connection.MkdirOptions) error {
-	ret := _m.Called(options)
+// Mkdir provides a mock function with given fields: path
+func (_m *Connection) Mkdir(path string) error {
+	ret := _m.Called(path)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*connection.MkdirOptions) error); ok {
-		r0 = rf(options)
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(path)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -2,12 +2,14 @@ package ftp
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
 
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 )
 
@@ -20,7 +22,6 @@ type UploadFileInput struct {
 	RemotePath    string
 	SizeInBytes   uint64
 	CreateParents bool
-	Recursive     bool
 }
 
 type UploadFileRepos struct {
@@ -31,8 +32,7 @@ type UploadFileRepos struct {
 type UploadFile struct {
 }
 
-func (u *UploadFile) Execute(ctx context.Context, repos *UploadFileRepos, input *UploadFileInput) error {
-	// TODO recursive file upload
+func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *UploadFileInput) error {
 	dirPath, fileName := filepath.Split(input.RemotePath)
 	if strings.HasSuffix(dirPath, string(filepath.Separator)) {
 		dirPath = dirPath[:len(dirPath)-1]
@@ -40,20 +40,21 @@ func (u *UploadFile) Execute(ctx context.Context, repos *UploadFileRepos, input 
 
 	if dirPath != "" {
 		if input.CreateParents {
-			options := &connection.MkdirOptions{
-				Path:          dirPath,
-				CreateParents: true,
-			}
-
-			if err := repos.Connection.Mkdir(options); err != nil {
+			if err := repos.Connection.Mkdir(dirPath); err != nil {
 				repos.Logger.WithError(err).Error("failed to create parent directories")
-				return errors.NewInternalError("failed to create parent directories", nil)
+				return ftperrors.NewInternalError("failed to create parent directories", nil)
 			}
 		}
 
 		if err := repos.Connection.Cd(dirPath); err != nil {
+			var notFoundErr *ftperrors.NotFoundError
+			if errors.As(err, &notFoundErr) {
+				repos.Logger.Error(fmt.Sprintf("directory %s not found", dirPath))
+				return ftperrors.NewNotFoundError(fmt.Sprintf("directory %s not found", dirPath), nil)
+			}
+
 			repos.Logger.WithError(err).Error("failed to change directory")
-			return errors.NewInternalError("failed to change directory", nil)
+			return ftperrors.NewInternalError("failed to change directory", nil)
 		}
 	}
 
@@ -64,10 +65,20 @@ func (u *UploadFile) Execute(ctx context.Context, repos *UploadFileRepos, input 
 
 	if err := repos.Connection.Upload(options); err != nil {
 		repos.Logger.WithError(err).Error("failed to upload file")
-		return errors.NewInternalError("failed to upload file", nil)
+		return ftperrors.NewInternalError("failed to upload file", nil)
 	}
 
-	// TODO validate file size
+	sizeInBytes, err := repos.Connection.Size(input.RemotePath)
+	if err != nil {
+		repos.Logger.WithError(err).Error("failed to check file size")
+		return ftperrors.NewInternalError("failed to check file size", nil)
+	}
+
+	if sizeInBytes != input.SizeInBytes {
+		msg := fmt.Sprintf("uploaded file size %d does not match the actual %d", sizeInBytes, input.SizeInBytes)
+		repos.Logger.WithError(err).Error(msg)
+		return ftperrors.NewInternalError(msg, nil)
+	}
 
 	return nil
 }

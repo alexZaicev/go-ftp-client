@@ -2,12 +2,10 @@ package cli
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"os"
+	"path/filepath"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/upload"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
@@ -98,18 +96,11 @@ func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadI
 		Password:       pwd,
 		Verbose:        verbose,
 		Timeout:        defaultConnectionTimeout,
-		FilePath:       trimLeadingSlash(filePath),
+		FilePath:       filePath,
 		CreateParents:  createParents,
 		Recursive:      recursive,
 		RemoteFilePath: args[0],
 	}, nil
-}
-
-func trimLeadingSlash(path string) string {
-	if strings.HasPrefix(path, "/") {
-		return path[1:]
-	}
-	return path
 }
 
 func doUpload(cmd *cobra.Command, args []string) error {

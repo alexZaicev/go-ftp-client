@@ -3,6 +3,7 @@ package ftpconnection
 import (
 	"bufio"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,7 +18,7 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/parsers"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
 const (
@@ -60,10 +61,16 @@ const (
 	TransferTypeBinary = "I"
 )
 
+type TextConnection interface {
+	ReadResponse(expectedCode int) (int, string, error)
+	Cmd(format string, args ...any) (uint, error)
+	Close() error
+}
+
 type serverConnection struct {
-	dialOptions *dialOptions
+	dialOptions *DialOptions
 	host        string
-	conn        *textproto.Conn
+	conn        TextConnection
 	tcpConn     net.Conn
 	parser      parsers.Parser
 
@@ -76,22 +83,27 @@ type serverConnection struct {
 	skipEPSV      bool
 }
 
-func newConnection(conn net.Conn, options *dialOptions) connection.Connection {
-	remoteAddr := conn.RemoteAddr().(*net.TCPAddr)
+func newConnection(
+	host string,
+	conn net.Conn,
+	textConn TextConnection,
+	options *DialOptions,
+) (connection.Connection, error) {
+	// TODO: add nil checks
 	return &serverConnection{
 		dialOptions: options,
-		host:        remoteAddr.IP.String(),
+		host:        host,
 		tcpConn:     conn,
-		conn:        textproto.NewConn(options.wrapConnection(conn)),
+		conn:        textConn,
 		parser:      parsers.NewGenericListParser(),
-	}
+	}, nil
 }
 
 // Ready function validates that the FTP server is ready to proceed.
 func (c *serverConnection) Ready() error {
 	if _, _, err := c.conn.ReadResponse(StatusReady); err != nil {
 		defer c.Stop()
-		return errors.NewInternalError("failed to check if FTP server is ready", err)
+		return ftperrors.NewInternalError("failed to check if FTP server is ready", err)
 	}
 	return nil
 }
@@ -100,7 +112,7 @@ func (c *serverConnection) Ready() error {
 func (c *serverConnection) EnableExplicitTLSMode() error {
 	if _, _, err := c.cmd(StatusAuthOK, CommandAuthTLS); err != nil {
 		defer c.Stop()
-		return errors.NewInternalError("failed to authenticate with TLS", err)
+		return ftperrors.NewInternalError("failed to authenticate with TLS", err)
 	}
 	tlsConn := tls.Client(c.tcpConn, c.dialOptions.tlsConfig)
 	c.tcpConn = tlsConn
@@ -112,7 +124,7 @@ func (c *serverConnection) EnableExplicitTLSMode() error {
 func (c *serverConnection) Stop() error {
 	defer c.conn.Close()
 	if _, err := c.conn.Cmd(CommandQuit); err != nil {
-		return errors.NewInternalError("failed to send quit command to FTP server", err)
+		return ftperrors.NewInternalError("failed to send quit command to FTP server", err)
 	}
 	return nil
 }
@@ -122,21 +134,21 @@ func (c *serverConnection) Stop() error {
 func (c *serverConnection) Login(user, password string) error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandUser, user)
 	if err != nil {
-		return errors.NewInternalError("failed to send user command", err)
+		return ftperrors.NewInternalError("failed to send user command", err)
 	}
 
 	switch code {
 	case StatusLoggedIn:
 	case StatusUserOK:
 		if _, _, err := c.cmd(StatusLoggedIn, CommandPass, password); err != nil {
-			return errors.NewInternalError("failed to authenticate user", err)
+			return ftperrors.NewInternalError("failed to authenticate user", err)
 		}
 	default:
-		return errors.NewInternalError(msg, nil)
+		return ftperrors.NewInternalError(msg, nil)
 	}
 
 	if err := c.updateFeatures(); err != nil {
-		return errors.NewInternalError("failed to establish supported features of connected server", err)
+		return ftperrors.NewInternalError("failed to establish supported features of connected server", err)
 	}
 
 	return nil
@@ -144,7 +156,7 @@ func (c *serverConnection) Login(user, password string) error {
 
 func (c *serverConnection) List(options *connection.ListOptions) ([]*entities.Entry, error) {
 	if options == nil {
-		return nil, errors.NewInvalidArgumentError("options", errors.ErrMsgCannotBeNil)
+		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
 	cmd := CommandList
@@ -156,7 +168,7 @@ func (c *serverConnection) List(options *connection.ListOptions) ([]*entities.En
 
 	conn, err := c.cmdWithDataConn(0, cmd, options.Path)
 	if err != nil {
-		return nil, errors.NewInternalError("failed to list files", err)
+		return nil, ftperrors.NewInternalError("failed to list files", err)
 	}
 	defer conn.Close()
 
@@ -166,37 +178,53 @@ func (c *serverConnection) List(options *connection.ListOptions) ([]*entities.En
 		entryStr := scanner.Text()
 		entry, parseErr := c.parser.Parse(entryStr)
 		if parseErr != nil {
-			return nil, errors.NewInternalError(fmt.Sprintf("failed to parser list entry: %s", entryStr), parseErr)
+			return nil, ftperrors.NewInternalError(fmt.Sprintf("failed to parser list entry: %s", entryStr), parseErr)
 		}
 		entries = append(entries, entry)
 	}
 	return entries, nil
 }
 
-func (c *serverConnection) Mkdir(options *connection.MkdirOptions) error {
-	if options == nil {
-		return errors.NewInvalidArgumentError("options", errors.ErrMsgCannotBeNil)
+func (c *serverConnection) Mkdir(path string) error {
+	if path == "" {
+		return ftperrors.NewInvalidArgumentError("path", ftperrors.ErrMsgCannotBeBlank)
 	}
 
-	pathTokens := strings.Split(options.Path, string(filepath.Separator))
+	if strings.HasPrefix(path, string(filepath.Separator)) {
+		path = path[1:]
+	}
+	pathTokens := strings.Split(path, string(filepath.Separator))
+
 	var builder strings.Builder
+	builder.WriteString("/")
 	for idx, pathToken := range pathTokens {
 		if idx > 0 {
 			builder.WriteRune(filepath.Separator)
 		}
 		builder.WriteString(pathToken)
-		_, _, err := c.cmd(StatusPathCreated, CommandMakeDir, builder.String())
-		if err != nil {
-			return errors.NewInternalError("failed to create directory", err)
+
+		pathToCreate := builder.String()
+
+		if err := c.Cd(pathToCreate); err != nil {
+			var notFoundErr *ftperrors.NotFoundError
+			if !errors.As(err, &notFoundErr) {
+				return err
+			}
+
+			_, _, mkdErr := c.cmd(StatusPathCreated, CommandMakeDir, pathToCreate)
+			if mkdErr != nil {
+				return ftperrors.NewInternalError("failed to create directory", mkdErr)
+			}
 		}
 	}
-	return nil
+
+	return c.Cd("/")
 }
 
 func (c *serverConnection) Status() (*entities.Status, error) {
 	_, msg, err := c.cmd(StatusSystem, CommandStatus)
 	if err != nil {
-		return nil, errors.NewInternalError("failed to get server status", err)
+		return nil, ftperrors.NewInternalError("failed to get server status", err)
 	}
 
 	status := &entities.Status{}
@@ -225,7 +253,7 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 
 	_, msg, err = c.cmd(StatusName, CommandSystem)
 	if err != nil {
-		return nil, errors.NewInternalError("failed to get server system information", err)
+		return nil, ftperrors.NewInternalError("failed to get server system information", err)
 	}
 
 	msg = strings.TrimSpace(msg)
@@ -237,7 +265,7 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 
 func (c *serverConnection) Upload(options *connection.UploadOptions) error {
 	if options == nil {
-		return errors.NewInvalidArgumentError("options", errors.ErrMsgCannotBeNil)
+		return ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
 	conn, err := c.cmdWithDataConn(0, CommandStore, options.Path)
@@ -262,18 +290,36 @@ func (c *serverConnection) Upload(options *connection.UploadOptions) error {
 
 	err = multiErr.ErrorOrNil()
 	if err != nil {
-		return errors.NewInternalError("failed to upload file to remote path", err)
+		return ftperrors.NewInternalError("failed to upload file to remote path", err)
 	}
 
 	return nil
 }
 
 func (c *serverConnection) Cd(path string) error {
-	_, _, err := c.cmd(StatusRequestedFileActionOK, CommandChangeWorkDir, path)
+	code, msg, err := c.cmd(StatusNoCheck, CommandChangeWorkDir, path)
 	if err != nil {
-		return errors.NewInternalError("failed to change working directory", err)
+		return ftperrors.NewInternalError("failed to change working directory", err)
 	}
-	return nil
+	if code == StatusRequestedFileActionOK {
+		return nil
+	}
+	if code == StatusFileUnavailable {
+		return ftperrors.NewNotFoundError(fmt.Sprintf("path %s does not exist", path), nil)
+	}
+	return ftperrors.NewInternalError(msg, err)
+}
+
+func (c *serverConnection) Size(path string) (uint64, error) {
+	_, msg, err := c.cmd(StatusFile, "SIZE %s", path)
+	if err != nil {
+		return 0, ftperrors.NewInternalError("failed to change working directory", err)
+	}
+	sizeInBytes, err := strconv.ParseUint(msg, 10, 64)
+	if err != nil {
+		return 0, ftperrors.NewInternalError("failed to parse file size to a non-zero integer", err)
+	}
+	return sizeInBytes, err
 }
 
 // cmd function executes a command and validates the expected response code.
@@ -289,19 +335,19 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 	if c.usePRET {
 		_, _, err := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
 		if err != nil {
-			return nil, errors.NewInternalError("failed to issue pre-transfer configuration", err)
+			return nil, ftperrors.NewInternalError("failed to issue pre-transfer configuration", err)
 		}
 	}
 
 	conn, err := c.openDataConn()
 	if err != nil {
-		return nil, errors.NewInternalError("failed to open new data connection", err)
+		return nil, ftperrors.NewInternalError("failed to open new data connection", err)
 	}
 
 	if offset != 0 {
 		if _, _, err := c.cmd(StatusRequestFilePending, CommandRestartTransfer, offset); err != nil {
 			defer conn.Close()
-			return nil, errors.NewInternalError("failed to restart file transport from specified offset", err)
+			return nil, ftperrors.NewInternalError("failed to restart file transport from specified offset", err)
 		}
 	}
 
@@ -313,7 +359,7 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 
 	if code != StatusAlreadyOpen && code != StatusAboutToSend {
 		defer conn.Close()
-		return nil, errors.NewInternalError(msg, nil)
+		return nil, ftperrors.NewInternalError(msg, nil)
 	}
 
 	return conn, nil
@@ -324,7 +370,7 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 func (c *serverConnection) updateFeatures() error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandFeat)
 	if err != nil {
-		return errors.NewInternalError(msg, err)
+		return ftperrors.NewInternalError(msg, err)
 	}
 
 	if code != StatusSystem {
@@ -359,22 +405,22 @@ func (c *serverConnection) updateFeatures() error {
 
 	// switch to binary mode
 	if _, _, err := c.cmd(StatusCommandOK, CommandType, TransferTypeBinary); err != nil {
-		return errors.NewInternalError("failed to set transfer type to binary mode", err)
+		return ftperrors.NewInternalError("failed to set transfer type to binary mode", err)
 	}
 
 	if _, ok := features[FeatureUTF8]; ok && !c.dialOptions.disableUTF8 {
 		if err := c.setUTF8(); err != nil {
-			return errors.NewInternalError("failed to turn UTF-8 option on", err)
+			return ftperrors.NewInternalError("failed to turn UTF-8 option on", err)
 		}
 	}
 
 	// If using implicit TLS, make data connections also use TLS
 	if c.dialOptions.tlsConfig != nil {
 		if _, _, err = c.cmd(StatusCommandOK, CommandProtectionBufferSize); err != nil {
-			return errors.NewInternalError("failed to set protocol buffer size", err)
+			return ftperrors.NewInternalError("failed to set protocol buffer size", err)
 		}
 		if _, _, err = c.cmd(StatusCommandOK, CommandProtocol); err != nil {
-			return errors.NewInternalError("failed to set protocol", err)
+			return ftperrors.NewInternalError("failed to set protocol", err)
 		}
 	}
 
@@ -402,7 +448,7 @@ func (c *serverConnection) setUTF8() error {
 	}
 
 	if code != StatusCommandOK {
-		return errors.NewInternalError(msg, nil)
+		return ftperrors.NewInternalError(msg, nil)
 	}
 	return nil
 }
@@ -413,16 +459,16 @@ func (c *serverConnection) setPassiveMode() (string, error) {
 	// Response of the command: Entering Passive Mode (h1,h2,h3,h4,p1,p2).
 	_, msg, err := c.cmd(StatusPassiveMode, CommandPassive)
 	if err != nil {
-		return "", errors.NewInternalError("failed to set passive mode on server", err)
+		return "", ftperrors.NewInternalError("failed to set passive mode on server", err)
 	}
 	msg = strings.ToLower(msg)
 	if !strings.HasPrefix(msg, "entering passive mode") {
-		return "", errors.NewInternalError("failed to extract host and port from passive mode response", nil)
+		return "", ftperrors.NewInternalError("failed to extract host and port from passive mode response", nil)
 	}
 	start := strings.Index(msg, "(")
 	end := strings.Index(msg, ")")
 	if start < 0 || end < 0 {
-		return "", errors.NewInternalError("failed to extract host and port from passive mode response", nil)
+		return "", ftperrors.NewInternalError("failed to extract host and port from passive mode response", nil)
 	}
 	hostPortTokens := strings.SplitN(msg[start+1:end], ",", 6)
 
@@ -430,12 +476,12 @@ func (c *serverConnection) setPassiveMode() (string, error) {
 
 	port1, err := strconv.ParseUint(hostPortTokens[4], 10, 64)
 	if err != nil {
-		return "", errors.NewInternalError("failed to parse first part of passive port", err)
+		return "", ftperrors.NewInternalError("failed to parse first part of passive port", err)
 	}
 
 	port2, err := strconv.ParseUint(hostPortTokens[5], 10, 64)
 	if err != nil {
-		return "", errors.NewInternalError("failed to parse second part of passive port", err)
+		return "", ftperrors.NewInternalError("failed to parse second part of passive port", err)
 	}
 
 	port := port1*256 + port2
@@ -448,21 +494,21 @@ func (c *serverConnection) setPassiveMode() (string, error) {
 func (c *serverConnection) setExtendedPassiveMode() (string, error) {
 	_, msg, err := c.cmd(StatusExtendedPassiveMode, CommandExtendedPassiveMode)
 	if err != nil {
-		return "", errors.NewInternalError("failed to set extended passive mode", err)
+		return "", ftperrors.NewInternalError("failed to set extended passive mode", err)
 	}
 	msg = strings.ToLower(msg)
 	if !strings.HasPrefix(msg, "entering extended passive mode") {
-		return "", errors.NewInternalError("failed to extract port from extended passive mode response", nil)
+		return "", ftperrors.NewInternalError("failed to extract port from extended passive mode response", nil)
 	}
 	start := strings.Index(msg, "(")
 	end := strings.Index(msg, ")")
 	if start < 0 || end < 0 {
-		return "", errors.NewInternalError("failed to extract port from extended passive mode response", nil)
+		return "", ftperrors.NewInternalError("failed to extract port from extended passive mode response", nil)
 	}
 	port := strings.ReplaceAll(msg[start+1:end], "|", "")
 
 	if _, err := strconv.ParseUint(port, 10, 64); err != nil {
-		return "", errors.NewInternalError("failed to parse passive port", err)
+		return "", ftperrors.NewInternalError("failed to parse passive port", err)
 	}
 
 	return port, nil
@@ -472,12 +518,10 @@ func (c *serverConnection) setExtendedPassiveMode() (string, error) {
 // passive mode.
 func (c *serverConnection) getDataConnPort() (string, error) {
 	if !c.dialOptions.disableEPSV && !c.skipEPSV {
-		port, err := c.setExtendedPassiveMode()
-		if err != nil {
-			return "", err
+		if port, err := c.setExtendedPassiveMode(); err == nil {
+			return fmt.Sprintf("%s:%s", c.host, port), nil
 		}
 		c.skipEPSV = true
-		return fmt.Sprintf("%s:%s", c.host, port), nil
 	}
 	return c.setPassiveMode()
 }

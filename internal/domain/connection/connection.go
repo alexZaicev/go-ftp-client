@@ -11,11 +11,6 @@ type ListOptions struct {
 	ShowAll bool
 }
 
-type MkdirOptions struct {
-	Path          string
-	CreateParents bool
-}
-
 type UploadOptions struct {
 	FileReader io.Reader
 	Path       string
@@ -28,7 +23,8 @@ type Connection interface {
 	EnableExplicitTLSMode() error
 	List(options *ListOptions) ([]*entities.Entry, error)
 	Status() (*entities.Status, error)
-	Mkdir(options *MkdirOptions) error
+	Mkdir(path string) error
 	Upload(options *UploadOptions) error
 	Cd(path string) error
+	Size(path string) (uint64, error)
 }

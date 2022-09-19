@@ -1,5 +1,9 @@
-package ftpconnection
+package ftpconnection_test
 
-func NewServerConnection() *serverConnection {
-	return &serverConnection{}
+import "net"
+
+var remoteAddress = &net.TCPAddr{
+	IP:   net.IP("10.0.0.1"),
+	Port: 21,
+	Zone: "",
 }

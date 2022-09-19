@@ -13,8 +13,8 @@ const (
 	defaultShutTimeout = 500 * time.Millisecond
 )
 
-// dialOptions holds consumer defined dial-up options
-type dialOptions struct {
+// DialOptions holds consumer defined dial-up options
+type DialOptions struct {
 	tlsConfig *tls.Config
 	dialer    *net.Dialer
 	location  *time.Location
@@ -31,18 +31,18 @@ type dialOptions struct {
 	disableEPSV bool
 }
 
-type DialOption func(options *dialOptions) error
+type DialOption func(options *DialOptions) error
 
-// newDialOptions create a dialOptions struct with default configurations
-func newDialOptions() *dialOptions {
-	return &dialOptions{
+// NewDialOptions create a DialOptions struct with default configurations
+func NewDialOptions() *DialOptions {
+	return &DialOptions{
 		location:    time.UTC,
 		dialer:      &net.Dialer{},
 		shutTimeout: defaultShutTimeout,
 	}
 }
 
-func (do *dialOptions) wrapConnection(conn net.Conn) io.ReadWriteCloser {
+func (do *DialOptions) wrapConnection(conn net.Conn) io.ReadWriteCloser {
 	if do.verboseWriter == nil {
 		return conn
 	}
@@ -50,14 +50,14 @@ func (do *dialOptions) wrapConnection(conn net.Conn) io.ReadWriteCloser {
 }
 
 func WithTimeout(timeout time.Duration) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		options.dialer.Timeout = timeout
 		return nil
 	}
 }
 
 func WithTLSConfig(tlsConfig *tls.Config) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		if tlsConfig == nil {
 			return errors.NewInvalidArgumentError("tlsConfig", errors.ErrMsgCannotBeNil)
 		}
@@ -67,7 +67,7 @@ func WithTLSConfig(tlsConfig *tls.Config) DialOption {
 }
 
 func WithExplicitTLSConfig(tlsConfig *tls.Config) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		if tlsConfig == nil {
 			return errors.NewInvalidArgumentError("tlsConfig", errors.ErrMsgCannotBeNil)
 		}
@@ -78,7 +78,7 @@ func WithExplicitTLSConfig(tlsConfig *tls.Config) DialOption {
 }
 
 func WithLocation(location *time.Location) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		if location == nil {
 			return errors.NewInvalidArgumentError("location", errors.ErrMsgCannotBeNil)
 		}
@@ -88,7 +88,7 @@ func WithLocation(location *time.Location) DialOption {
 }
 
 func WithDialer(dialer *net.Dialer) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		if dialer == nil {
 			return errors.NewInvalidArgumentError("dialer", errors.ErrMsgCannotBeNil)
 		}
@@ -98,7 +98,7 @@ func WithDialer(dialer *net.Dialer) DialOption {
 }
 
 func WithVerboseWriter(verboseWriter io.Writer) DialOption {
-	return func(options *dialOptions) error {
+	return func(options *DialOptions) error {
 		options.verboseWriter = verboseWriter
 		return nil
 	}

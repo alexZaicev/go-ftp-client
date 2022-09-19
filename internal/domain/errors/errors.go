@@ -7,6 +7,13 @@ const (
 	ErrMsgCannotBeBlank = "cannot be blank"
 )
 
+var (
+	InternalErrorType        = &InternalError{}
+	InvalidArgumentErrorType = &InvalidArgumentError{}
+	UnknownErrorType         = &UnknownError{}
+	NotFoundErrorType        = &NotFoundError{}
+)
+
 type InternalError struct {
 	baseError
 }
