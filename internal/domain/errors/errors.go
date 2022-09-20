@@ -47,7 +47,7 @@ type UnknownError struct {
 func NewUnknownError(msg string, err error) *UnknownError {
 	return &UnknownError{
 		baseError: newBaseError(
-			fmt.Sprintf("an unknown error occured: %s", msg),
+			fmt.Sprintf("an unknown error occurred: %s", msg),
 			err,
 		),
 	}

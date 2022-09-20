@@ -32,7 +32,7 @@ type Dependencies struct {
 	UseCase useCase.ListFilesUseCase
 }
 
-func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdListInput) error {
+func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdListInput) (err error) {
 	conn, err := ftpclient.Connect(
 		ctx,
 		input.Address,
@@ -44,7 +44,11 @@ func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependen
 	if err != nil {
 		return err
 	}
-	defer conn.Stop()
+	defer func() {
+		if stopErr := conn.Stop(); stopErr != nil {
+			err = stopErr
+		}
+	}()
 
 	useCaseRepos := &useCase.ListFilesRepos{
 		Logger:     logger,

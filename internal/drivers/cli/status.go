@@ -80,7 +80,7 @@ func doStatus(cmd *cobra.Command, args []string) error {
 		UseCase: &ftp.Status{},
 	}
 
-	if err = status.PerformStatus(ctx, logger, dependencies, input); err != nil {
+	if err := status.PerformStatus(ctx, logger, dependencies, input); err != nil {
 		return err
 	}
 	return nil

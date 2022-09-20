@@ -18,10 +18,9 @@ type UploadFileUseCase interface {
 }
 
 type UploadFileInput struct {
-	FileReader    io.Reader
-	RemotePath    string
-	SizeInBytes   uint64
-	CreateParents bool
+	FileReader  io.Reader
+	RemotePath  string
+	SizeInBytes uint64
 }
 
 type UploadFileRepos struct {
@@ -39,13 +38,6 @@ func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *U
 	}
 
 	if dirPath != "" {
-		if input.CreateParents {
-			if err := repos.Connection.Mkdir(dirPath); err != nil {
-				repos.Logger.WithError(err).Error("failed to create parent directories")
-				return ftperrors.NewInternalError("failed to create parent directories", nil)
-			}
-		}
-
 		if err := repos.Connection.Cd(dirPath); err != nil {
 			var notFoundErr *ftperrors.NotFoundError
 			if errors.As(err, &notFoundErr) {

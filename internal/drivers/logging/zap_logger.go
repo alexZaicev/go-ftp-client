@@ -11,7 +11,6 @@ import (
 // Log output keys that are only used in the Zap implementation. These are based on the standardized
 // keys listed in https://pages.github.hpe.com/cloud/storage-design/docs/logging.html#log-fields.
 const (
-	callerKey     = "caller"
 	levelKey      = "level"
 	messageKey    = "message"
 	nameKey       = "name"

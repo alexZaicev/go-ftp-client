@@ -55,12 +55,12 @@ func Dial(ctx context.Context, address string, options ...DialOption) (connectio
 	if err != nil {
 		return nil, err
 	}
-	if err = conn.Ready(); err != nil {
+	if err := conn.Ready(); err != nil {
 		return nil, err
 	}
 
 	if dialOpts.explicitTLS {
-		if err = conn.EnableExplicitTLSMode(); err != nil {
+		if err := conn.EnableExplicitTLSMode(); err != nil {
 			return nil, err
 		}
 	}

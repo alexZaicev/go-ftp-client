@@ -61,6 +61,11 @@ const (
 	TransferTypeBinary = "I"
 )
 
+const (
+	decimalBase = 10
+	bitSize     = 64
+)
+
 type TextConnection interface {
 	ReadResponse(expectedCode int) (int, string, error)
 	Cmd(format string, args ...any) (uint, error)
@@ -89,7 +94,18 @@ func newConnection(
 	textConn TextConnection,
 	options *DialOptions,
 ) (connection.Connection, error) {
-	// TODO: add nil checks
+	if host == "" {
+		return nil, ftperrors.NewInvalidArgumentError("host", ftperrors.ErrMsgCannotBeBlank)
+	}
+	if conn == nil {
+		return nil, ftperrors.NewInvalidArgumentError("conn", ftperrors.ErrMsgCannotBeNil)
+	}
+	if textConn == nil {
+		return nil, ftperrors.NewInvalidArgumentError("textConn", ftperrors.ErrMsgCannotBeNil)
+	}
+	if options == nil {
+		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
+	}
 	return &serverConnection{
 		dialOptions: options,
 		host:        host,
@@ -100,19 +116,27 @@ func newConnection(
 }
 
 // Ready function validates that the FTP server is ready to proceed.
-func (c *serverConnection) Ready() error {
-	if _, _, err := c.conn.ReadResponse(StatusReady); err != nil {
-		defer c.Stop()
-		return ftperrors.NewInternalError("failed to check if FTP server is ready", err)
+func (c *serverConnection) Ready() (err error) {
+	if _, _, readErr := c.conn.ReadResponse(StatusReady); readErr != nil {
+		defer func() {
+			if stopErr := c.Stop(); stopErr != nil {
+				err = stopErr
+			}
+		}()
+		return ftperrors.NewInternalError("failed to check if FTP server is ready", readErr)
 	}
 	return nil
 }
 
 // EnableExplicitTLSMode function enables TLS modes on established TCP connection.
-func (c *serverConnection) EnableExplicitTLSMode() error {
-	if _, _, err := c.cmd(StatusAuthOK, CommandAuthTLS); err != nil {
-		defer c.Stop()
-		return ftperrors.NewInternalError("failed to authenticate with TLS", err)
+func (c *serverConnection) EnableExplicitTLSMode() (err error) {
+	if _, _, readErr := c.cmd(StatusAuthOK, CommandAuthTLS); readErr != nil {
+		defer func() {
+			if stopErr := c.Stop(); stopErr != nil {
+				err = stopErr
+			}
+		}()
+		return ftperrors.NewInternalError("failed to authenticate with TLS", readErr)
 	}
 	tlsConn := tls.Client(c.tcpConn, c.dialOptions.tlsConfig)
 	c.tcpConn = tlsConn
@@ -121,10 +145,14 @@ func (c *serverConnection) EnableExplicitTLSMode() error {
 }
 
 // Stop function sends a quit command to FTP server and closes the TCP connection.
-func (c *serverConnection) Stop() error {
-	defer c.conn.Close()
-	if _, err := c.conn.Cmd(CommandQuit); err != nil {
-		return ftperrors.NewInternalError("failed to send quit command to FTP server", err)
+func (c *serverConnection) Stop() (err error) {
+	defer func() {
+		if closeErr := c.conn.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
+	if _, cmdErr := c.conn.Cmd(CommandQuit); cmdErr != nil {
+		return ftperrors.NewInternalError("failed to send quit command to FTP server", cmdErr)
 	}
 	return nil
 }
@@ -154,7 +182,7 @@ func (c *serverConnection) Login(user, password string) error {
 	return nil
 }
 
-func (c *serverConnection) List(options *connection.ListOptions) ([]*entities.Entry, error) {
+func (c *serverConnection) List(options *connection.ListOptions) (entries []*entities.Entry, err error) {
 	if options == nil {
 		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
@@ -170,9 +198,12 @@ func (c *serverConnection) List(options *connection.ListOptions) ([]*entities.En
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to list files", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if closeErr := conn.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
 
-	entries := make([]*entities.Entry, 0)
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		entryStr := scanner.Text()
@@ -238,13 +269,15 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 		line = strings.TrimSpace(line)
 
 		if strings.HasPrefix(line, "connected to") {
-			tokens := strings.SplitN(line, " ", 3)
+			const tokenSize = 3
+			tokens := strings.SplitN(line, " ", tokenSize)
 			status.RemoteAddress = tokens[2]
 			continue
 		}
 
 		if strings.Contains(line, "logged in") {
-			tokens := strings.SplitN(line, " ", 4)
+			const tokenSize = 4
+			tokens := strings.SplitN(line, " ", tokenSize)
 			status.LoggedInUser = tokens[3]
 			continue
 		}
@@ -257,7 +290,8 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 	}
 
 	msg = strings.TrimSpace(msg)
-	tokens := strings.SplitN(msg, " ", 2)
+	const tokenSize = 2
+	tokens := strings.SplitN(msg, " ", tokenSize)
 	status.System = tokens[0]
 
 	return status, nil
@@ -315,7 +349,7 @@ func (c *serverConnection) Size(path string) (uint64, error) {
 	if err != nil {
 		return 0, ftperrors.NewInternalError("failed to change working directory", err)
 	}
-	sizeInBytes, err := strconv.ParseUint(msg, 10, 64)
+	sizeInBytes, err := strconv.ParseUint(msg, decimalBase, bitSize)
 	if err != nil {
 		return 0, ftperrors.NewInternalError("failed to parse file size to a non-zero integer", err)
 	}
@@ -323,42 +357,54 @@ func (c *serverConnection) Size(path string) (uint64, error) {
 }
 
 // cmd function executes a command and validates the expected response code.
-func (c *serverConnection) cmd(expectedStatusCode int, format string, args ...any) (int, string, error) {
-	if _, err := c.conn.Cmd(format, args...); err != nil {
+func (c *serverConnection) cmd(expectedStatusCode int, format string, args ...any) (code int, msg string, err error) {
+	if _, err = c.conn.Cmd(format, args...); err != nil {
 		return 0, "", err
 	}
 	return c.conn.ReadResponse(expectedStatusCode)
 }
 
-func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...any) (net.Conn, error) {
+func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...any) (conn net.Conn, err error) {
 	// For more information on PRET see: https://datatracker.ietf.org/doc/html/draft-dd-pret-00
 	if c.usePRET {
-		_, _, err := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
-		if err != nil {
-			return nil, ftperrors.NewInternalError("failed to issue pre-transfer configuration", err)
+		_, _, cmdErr := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
+		if cmdErr != nil {
+			return nil, ftperrors.NewInternalError("failed to issue pre-transfer configuration", cmdErr)
 		}
 	}
 
-	conn, err := c.openDataConn()
+	conn, err = c.openDataConn()
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to open new data connection", err)
 	}
 
 	if offset != 0 {
-		if _, _, err := c.cmd(StatusRequestFilePending, CommandRestartTransfer, offset); err != nil {
-			defer conn.Close()
-			return nil, ftperrors.NewInternalError("failed to restart file transport from specified offset", err)
+		if _, _, cmdErr := c.cmd(StatusRequestFilePending, CommandRestartTransfer, offset); cmdErr != nil {
+			defer func() {
+				if closeErr := conn.Close(); closeErr != nil {
+					err = closeErr
+				}
+			}()
+			return nil, ftperrors.NewInternalError("failed to restart file transport from specified offset", cmdErr)
 		}
 	}
 
 	code, msg, err := c.cmd(StatusNoCheck, format, args...)
 	if err != nil {
-		defer conn.Close()
+		defer func() {
+			if closeErr := conn.Close(); closeErr != nil {
+				err = closeErr
+			}
+		}()
 		return nil, err
 	}
 
 	if code != StatusAlreadyOpen && code != StatusAboutToSend {
-		defer conn.Close()
+		defer func() {
+			if closeErr := conn.Close(); closeErr != nil {
+				err = closeErr
+			}
+		}()
 		return nil, ftperrors.NewInternalError(msg, nil)
 	}
 
@@ -375,24 +421,25 @@ func (c *serverConnection) updateFeatures() error {
 
 	if code != StatusSystem {
 		// The server does not support the FEAT command. This is not an
-		// error: we consider that there is no additional feature.
+		// error, as we consider that there is no additional features.
 		return nil
 	}
 
+	msg = strings.ToLower(msg)
 	features := make(map[string]string, 0)
 	for _, line := range strings.Split(msg, "\n") {
-		if strings.Contains(line, "Features") || strings.Contains(line, "End") {
+		if strings.Contains(line, "features") || strings.Contains(line, "end") {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		feature := strings.SplitN(line, " ", 2)
+		const tokenSize = 2
+		tokens := strings.SplitN(line, " ", tokenSize)
 
-		command := feature[0]
-		var commandDesc string
-		if len(feature) == 2 {
-			commandDesc = feature[1]
+		var cmdDesc string
+		if len(tokens) == tokenSize {
+			cmdDesc = tokens[1]
 		}
-		features[command] = commandDesc
+		features[tokens[0]] = cmdDesc
 	}
 
 	if _, ok := features[FeatureMLST]; ok && !c.dialOptions.disableMLST {
@@ -404,13 +451,13 @@ func (c *serverConnection) updateFeatures() error {
 	c.mdtmCanWrite = c.mdtmSupported && c.dialOptions.writingMDTM
 
 	// switch to binary mode
-	if _, _, err := c.cmd(StatusCommandOK, CommandType, TransferTypeBinary); err != nil {
-		return ftperrors.NewInternalError("failed to set transfer type to binary mode", err)
+	if _, _, cmdErr := c.cmd(StatusCommandOK, CommandType, TransferTypeBinary); cmdErr != nil {
+		return ftperrors.NewInternalError("failed to set transfer type to binary mode", cmdErr)
 	}
 
 	if _, ok := features[FeatureUTF8]; ok && !c.dialOptions.disableUTF8 {
-		if err := c.setUTF8(); err != nil {
-			return ftperrors.NewInternalError("failed to turn UTF-8 option on", err)
+		if utfErr := c.setUTF8(); utfErr != nil {
+			return ftperrors.NewInternalError("failed to turn UTF-8 option on", utfErr)
 		}
 	}
 
@@ -470,16 +517,17 @@ func (c *serverConnection) setPassiveMode() (string, error) {
 	if start < 0 || end < 0 {
 		return "", ftperrors.NewInternalError("failed to extract host and port from passive mode response", nil)
 	}
-	hostPortTokens := strings.SplitN(msg[start+1:end], ",", 6)
+	const tokenSize = 6
+	hostPortTokens := strings.SplitN(msg[start+1:end], ",", tokenSize)
 
 	host := strings.Join(hostPortTokens[:4], ".")
 
-	port1, err := strconv.ParseUint(hostPortTokens[4], 10, 64)
+	port1, err := strconv.ParseUint(hostPortTokens[4], decimalBase, bitSize)
 	if err != nil {
 		return "", ftperrors.NewInternalError("failed to parse first part of passive port", err)
 	}
 
-	port2, err := strconv.ParseUint(hostPortTokens[5], 10, 64)
+	port2, err := strconv.ParseUint(hostPortTokens[5], decimalBase, bitSize)
 	if err != nil {
 		return "", ftperrors.NewInternalError("failed to parse second part of passive port", err)
 	}
@@ -507,7 +555,7 @@ func (c *serverConnection) setExtendedPassiveMode() (string, error) {
 	}
 	port := strings.ReplaceAll(msg[start+1:end], "|", "")
 
-	if _, err := strconv.ParseUint(port, 10, 64); err != nil {
+	if _, err := strconv.ParseUint(port, decimalBase, bitSize); err != nil {
 		return "", ftperrors.NewInternalError("failed to parse passive port", err)
 	}
 

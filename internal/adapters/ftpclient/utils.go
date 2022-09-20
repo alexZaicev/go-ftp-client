@@ -43,13 +43,13 @@ func Connect(
 	password string,
 	timeout time.Duration,
 	verbose bool,
-) (connection.Connection, error) {
+) (conn connection.Connection, err error) {
 	var vw io.Writer
 	if verbose {
 		vw = os.Stdout
 	}
 
-	conn, err := ftpconnection.Dial(
+	conn, err = ftpconnection.Dial(
 		ctx,
 		address,
 		ftpconnection.WithTimeout(timeout),
@@ -59,9 +59,13 @@ func Connect(
 		return nil, errors.NewInternalError("failed to establish connection", err)
 	}
 
-	if err = conn.Login(user, password); err != nil {
-		defer conn.Stop()
-		return nil, errors.NewInternalError("failed to authenticate with provided user account", err)
+	if loginErr := conn.Login(user, password); loginErr != nil {
+		defer func() {
+			if stopErr := conn.Stop(); stopErr != nil {
+				err = stopErr
+			}
+		}()
+		return nil, errors.NewInternalError("failed to authenticate with provided user account", loginErr)
 	}
 
 	return conn, nil

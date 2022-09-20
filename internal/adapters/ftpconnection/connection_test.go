@@ -2,12 +2,14 @@ package ftpconnection_test
 
 import (
 	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_ServerConnection_Mkdir_InvalidArgumentError(t *testing.T) {

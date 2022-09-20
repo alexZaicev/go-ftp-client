@@ -2,10 +2,11 @@ package cli
 
 import (
 	"context"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/upload"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
@@ -35,7 +36,6 @@ func AddUploadCommand(rootCMD *cobra.Command) error {
 		return err
 	}
 
-	uploadCMD.Flags().BoolP(ArgCreateParents, ArgCreateParentsShort, false, "Create parent directories if needed")
 	uploadCMD.Flags().BoolP(ArgRecursive, ArgRecursiveShort, false, "Recursively upload directory tree")
 
 	rootCMD.AddCommand(uploadCMD)
@@ -72,11 +72,6 @@ func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadI
 		return nil, err
 	}
 
-	createParents, err := flagSet.GetBool(ArgCreateParents)
-	if err != nil {
-		return nil, err
-	}
-
 	recursive, err := flagSet.GetBool(ArgRecursive)
 	if err != nil {
 		return nil, err
@@ -97,7 +92,6 @@ func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadI
 		Verbose:        verbose,
 		Timeout:        defaultConnectionTimeout,
 		FilePath:       filePath,
-		CreateParents:  createParents,
 		Recursive:      recursive,
 		RemoteFilePath: args[0],
 	}, nil
@@ -119,11 +113,12 @@ func doUpload(cmd *cobra.Command, args []string) error {
 	filesystem := os.DirFS("/")
 
 	dependencies := &upload.Dependencies{
-		UseCase:    &ftp.UploadFile{},
-		Filesystem: filesystem,
+		MkdirUseCase:  &ftp.Mkdir{},
+		UploadUseCase: &ftp.UploadFile{},
+		Filesystem:    filesystem,
 	}
 
-	if err = upload.PerformUploadFile(ctx, logger, dependencies, input); err != nil {
+	if err := upload.PerformUploadFile(ctx, logger, dependencies, input); err != nil {
 		return err
 	}
 

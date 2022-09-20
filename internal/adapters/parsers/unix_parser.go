@@ -12,6 +12,8 @@ import (
 
 const (
 	lastModificationDateFormat = "Jan 2 15:04"
+	decimalBase                = 10
+	bitSize                    = 64
 )
 
 type unixListParser struct {
@@ -37,7 +39,7 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 
 	// hard links
 	data, token = p.nextToken(data)
-	numLinks, err := strconv.ParseInt(token, 10, 32)
+	numLinks, err := strconv.ParseInt(token, decimalBase, bitSize)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse number of hard links", err)
 	}
@@ -49,14 +51,15 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 
 	// size in bytes
 	data, token = p.nextToken(data)
-	sizeInBytes, err := strconv.ParseUint(token, 10, 64)
+	sizeInBytes, err := strconv.ParseUint(token, decimalBase, bitSize)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse size in bytes", err)
 	}
 	entry.SizeInBytes = sizeInBytes
 
 	// last modification date
-	dateTokens := make([]string, 0, 3)
+	const tokenSize = 3
+	dateTokens := make([]string, 0, tokenSize)
 	for idx := 0; idx < 3; idx++ {
 		data, token = p.nextToken(data)
 		dateTokens = append(dateTokens, token)
@@ -69,7 +72,7 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 	entry.LastModificationDate = lastModificationDate
 
 	// name
-	data, entry.Name = p.nextToken(data)
+	_, entry.Name = p.nextToken(data)
 
 	return entry, nil
 }

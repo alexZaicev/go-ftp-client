@@ -1,8 +1,9 @@
 package ftpconnection
 
 import (
-	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"net"
+
+	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 )
 
 func NewServerConnection(

@@ -25,7 +25,7 @@ type Dependencies struct {
 	UseCase useCase.StatusUseCase
 }
 
-func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdStatusInput) error {
+func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdStatusInput) (err error) {
 	conn, err := ftpclient.Connect(
 		ctx,
 		input.Address,
@@ -38,7 +38,11 @@ func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencie
 		logger.WithError(err).Error("failed to connect to FTP server")
 		return err
 	}
-	defer conn.Stop()
+	defer func() {
+		if stopErr := conn.Stop(); stopErr != nil {
+			err = stopErr
+		}
+	}()
 
 	useCaseRepos := &useCase.StatusRepos{
 		Logger:     logger,

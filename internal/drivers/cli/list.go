@@ -106,7 +106,7 @@ func doList(cmd *cobra.Command, args []string) error {
 		UseCase: &ftp.ListFiles{},
 	}
 
-	if err = list.PerformListFiles(ctx, logger, dependencies, input); err != nil {
+	if err := list.PerformListFiles(ctx, logger, dependencies, input); err != nil {
 		return err
 	}
 
