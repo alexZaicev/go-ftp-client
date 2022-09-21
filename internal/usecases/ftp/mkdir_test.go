@@ -3,13 +3,15 @@ package ftp_test
 import (
 	"context"
 	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging/assertlogging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 	connectionMocks "github.com/alexZaicev/go-ftp-client/mocks/domain/connection"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_Mkdir_Execute_Success(t *testing.T) {

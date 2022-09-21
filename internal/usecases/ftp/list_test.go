@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging/assertlogging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 	connectionMocks "github.com/alexZaicev/go-ftp-client/mocks/domain/connection"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_ListFiles_Execute_Success(t *testing.T) {
@@ -25,17 +27,7 @@ func Test_ListFiles_Execute_Success(t *testing.T) {
 		{
 			name:     "list sort by name",
 			sortType: entities.SortTypeName,
-			entries: []*entities.Entry{
-				newEntry(t, "file5", 167, "2022-01-12 16:23"),
-				newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-				newEntry(t, "file9", 2, "2022-01-02 11:23"),
-				newEntry(t, "file2", 102, "2021-05-02 17:23"),
-				newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-				newEntry(t, "file1", 100, "2022-01-02 15:23"),
-				newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-				newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-			},
+			entries:  getEntries(t),
 			expectedEntries: []*entities.Entry{
 				newEntry(t, "file1", 100, "2022-01-02 15:23"),
 				newEntry(t, "file2", 102, "2021-05-02 17:23"),
@@ -51,17 +43,7 @@ func Test_ListFiles_Execute_Success(t *testing.T) {
 		{
 			name:     "list sort by size",
 			sortType: entities.SortTypeSize,
-			entries: []*entities.Entry{
-				newEntry(t, "file1", 100, "2022-01-02 15:23"),
-				newEntry(t, "file2", 102, "2021-05-02 17:23"),
-				newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-				newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-				newEntry(t, "file5", 167, "2022-01-12 16:23"),
-				newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-				newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-				newEntry(t, "file9", 2, "2022-01-02 11:23"),
-			},
+			entries:  getEntries(t),
 			expectedEntries: []*entities.Entry{
 				newEntry(t, "file9", 2, "2022-01-02 11:23"),
 				newEntry(t, "file1", 100, "2022-01-02 15:23"),
@@ -77,17 +59,7 @@ func Test_ListFiles_Execute_Success(t *testing.T) {
 		{
 			name:     "list sort by date",
 			sortType: entities.SortTypeDate,
-			entries: []*entities.Entry{
-				newEntry(t, "file1", 100, "2022-01-02 15:23"),
-				newEntry(t, "file2", 102, "2021-05-02 17:23"),
-				newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-				newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-				newEntry(t, "file5", 167, "2022-01-12 16:23"),
-				newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-				newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-				newEntry(t, "file9", 2, "2022-01-02 11:23"),
-			},
+			entries:  getEntries(t),
 			expectedEntries: []*entities.Entry{
 				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
 				newEntry(t, "file2", 102, "2021-05-02 17:23"),
@@ -101,30 +73,10 @@ func Test_ListFiles_Execute_Success(t *testing.T) {
 			},
 		},
 		{
-			name:     "list with unknown sort type",
-			sortType: entities.SortType(0),
-			entries: []*entities.Entry{
-				newEntry(t, "file1", 100, "2022-01-02 15:23"),
-				newEntry(t, "file2", 102, "2021-05-02 17:23"),
-				newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-				newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-				newEntry(t, "file5", 167, "2022-01-12 16:23"),
-				newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-				newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-				newEntry(t, "file9", 2, "2022-01-02 11:23"),
-			},
-			expectedEntries: []*entities.Entry{
-				newEntry(t, "file1", 100, "2022-01-02 15:23"),
-				newEntry(t, "file2", 102, "2021-05-02 17:23"),
-				newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-				newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-				newEntry(t, "file5", 167, "2022-01-12 16:23"),
-				newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-				newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-				newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-				newEntry(t, "file9", 2, "2022-01-02 11:23"),
-			},
+			name:            "list with unknown sort type",
+			sortType:        entities.SortType(0),
+			entries:         getEntries(t),
+			expectedEntries: getEntries(t),
 		},
 	}
 

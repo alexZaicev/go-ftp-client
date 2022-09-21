@@ -103,3 +103,10 @@ func WithVerboseWriter(verboseWriter io.Writer) DialOption {
 		return nil
 	}
 }
+
+func WithDisabledUTF8() DialOption {
+	return func(options *DialOptions) error {
+		options.disableUTF8 = true
+		return nil
+	}
+}

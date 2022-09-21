@@ -31,7 +31,6 @@ func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencie
 		input.Address,
 		input.User,
 		input.Password,
-		input.Timeout,
 		input.Verbose,
 	)
 	if err != nil {

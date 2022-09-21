@@ -5,14 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging/assertlogging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 	connectionMocks "github.com/alexZaicev/go-ftp-client/mocks/domain/connection"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_UploadFile_Execute_NoDirSuccess(t *testing.T) {

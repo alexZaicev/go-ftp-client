@@ -38,7 +38,6 @@ func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependen
 		input.Address,
 		input.User,
 		input.Password,
-		input.Timeout,
 		input.Verbose,
 	)
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
@@ -41,7 +40,6 @@ func Connect(
 	address string,
 	user string,
 	password string,
-	timeout time.Duration,
 	verbose bool,
 ) (conn connection.Connection, err error) {
 	var vw io.Writer
@@ -52,7 +50,6 @@ func Connect(
 	conn, err = ftpconnection.Dial(
 		ctx,
 		address,
-		ftpconnection.WithTimeout(timeout),
 		ftpconnection.WithVerboseWriter(vw),
 	)
 	if err != nil {

@@ -43,6 +43,7 @@ const (
 	CommandStore                = "STOR %s"
 	CommandMakeDir              = "MKD %s"
 	CommandChangeWorkDir        = "CWD %s"
+	CommandSize                 = "SIZE %s"
 
 	Off = "OFF"
 	On  = "ON"
@@ -123,7 +124,7 @@ func (c *serverConnection) Ready() (err error) {
 				err = stopErr
 			}
 		}()
-		return ftperrors.NewInternalError("failed to check if FTP server is ready", readErr)
+		return ftperrors.NewInternalError("failed to check if server is ready", readErr)
 	}
 	return nil
 }
@@ -136,7 +137,7 @@ func (c *serverConnection) EnableExplicitTLSMode() (err error) {
 				err = stopErr
 			}
 		}()
-		return ftperrors.NewInternalError("failed to authenticate with TLS", readErr)
+		return ftperrors.NewInternalError("failed to enable explicit TLS mode", readErr)
 	}
 	tlsConn := tls.Client(c.tcpConn, c.dialOptions.tlsConfig)
 	c.tcpConn = tlsConn
@@ -148,11 +149,11 @@ func (c *serverConnection) EnableExplicitTLSMode() (err error) {
 func (c *serverConnection) Stop() (err error) {
 	defer func() {
 		if closeErr := c.conn.Close(); closeErr != nil {
-			err = closeErr
+			err = ftperrors.NewInternalError("failed to close connection", closeErr)
 		}
 	}()
 	if _, cmdErr := c.conn.Cmd(CommandQuit); cmdErr != nil {
-		return ftperrors.NewInternalError("failed to send quit command to FTP server", cmdErr)
+		return ftperrors.NewInternalError("failed to disconnect from the server", cmdErr)
 	}
 	return nil
 }
@@ -162,21 +163,21 @@ func (c *serverConnection) Stop() (err error) {
 func (c *serverConnection) Login(user, password string) error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandUser, user)
 	if err != nil {
-		return ftperrors.NewInternalError("failed to send user command", err)
+		return ftperrors.NewInternalError("failed to start username authentication", err)
 	}
 
 	switch code {
 	case StatusLoggedIn:
 	case StatusUserOK:
-		if _, _, err := c.cmd(StatusLoggedIn, CommandPass, password); err != nil {
-			return ftperrors.NewInternalError("failed to authenticate user", err)
+		if _, _, pwdErr := c.cmd(StatusLoggedIn, CommandPass, password); pwdErr != nil {
+			return ftperrors.NewInternalError("failed to authenticate user", pwdErr)
 		}
 	default:
 		return ftperrors.NewInternalError(msg, nil)
 	}
 
-	if err := c.updateFeatures(); err != nil {
-		return ftperrors.NewInternalError("failed to establish supported features of connected server", err)
+	if updateErr := c.updateFeatures(); updateErr != nil {
+		return updateErr
 	}
 
 	return nil
@@ -249,13 +250,17 @@ func (c *serverConnection) Mkdir(path string) error {
 		}
 	}
 
-	return c.Cd("/")
+	if err := c.Cd("/"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *serverConnection) Status() (*entities.Status, error) {
 	_, msg, err := c.cmd(StatusSystem, CommandStatus)
 	if err != nil {
-		return nil, ftperrors.NewInternalError("failed to get server status", err)
+		return nil, ftperrors.NewInternalError("failed to fetch server status", err)
 	}
 
 	status := &entities.Status{}
@@ -271,14 +276,18 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 		if strings.HasPrefix(line, "connected to") {
 			const tokenSize = 3
 			tokens := strings.SplitN(line, " ", tokenSize)
-			status.RemoteAddress = tokens[2]
+			if len(tokens) >= tokenSize {
+				status.RemoteAddress = tokens[2]
+			}
 			continue
 		}
 
 		if strings.Contains(line, "logged in") {
 			const tokenSize = 4
 			tokens := strings.SplitN(line, " ", tokenSize)
-			status.LoggedInUser = tokens[3]
+			if len(tokens) >= tokenSize {
+				status.LoggedInUser = tokens[3]
+			}
 			continue
 		}
 		// TODO: add status check TLS
@@ -286,7 +295,7 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 
 	_, msg, err = c.cmd(StatusName, CommandSystem)
 	if err != nil {
-		return nil, ftperrors.NewInternalError("failed to get server system information", err)
+		return nil, ftperrors.NewInternalError("failed to fetch system type", err)
 	}
 
 	msg = strings.TrimSpace(msg)
@@ -341,13 +350,13 @@ func (c *serverConnection) Cd(path string) error {
 	if code == StatusFileUnavailable {
 		return ftperrors.NewNotFoundError(fmt.Sprintf("path %s does not exist", path), nil)
 	}
-	return ftperrors.NewInternalError(msg, err)
+	return ftperrors.NewInternalError(msg, nil)
 }
 
 func (c *serverConnection) Size(path string) (uint64, error) {
-	_, msg, err := c.cmd(StatusFile, "SIZE %s", path)
+	_, msg, err := c.cmd(StatusFile, CommandSize, path)
 	if err != nil {
-		return 0, ftperrors.NewInternalError("failed to change working directory", err)
+		return 0, ftperrors.NewInternalError("failed to fetch file size", err)
 	}
 	sizeInBytes, err := strconv.ParseUint(msg, decimalBase, bitSize)
 	if err != nil {
@@ -364,7 +373,7 @@ func (c *serverConnection) cmd(expectedStatusCode int, format string, args ...an
 	return c.conn.ReadResponse(expectedStatusCode)
 }
 
-func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...any) (conn net.Conn, err error) {
+func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...any) (conn io.ReadWriteCloser, err error) {
 	// For more information on PRET see: https://datatracker.ietf.org/doc/html/draft-dd-pret-00
 	if c.usePRET {
 		_, _, cmdErr := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
@@ -373,7 +382,7 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 		}
 	}
 
-	conn, err = c.openDataConn()
+	tcpConn, err := c.openDataConn()
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to open new data connection", err)
 	}
@@ -381,7 +390,7 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 	if offset != 0 {
 		if _, _, cmdErr := c.cmd(StatusRequestFilePending, CommandRestartTransfer, offset); cmdErr != nil {
 			defer func() {
-				if closeErr := conn.Close(); closeErr != nil {
+				if closeErr := tcpConn.Close(); closeErr != nil {
 					err = closeErr
 				}
 			}()
@@ -392,7 +401,7 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 	code, msg, err := c.cmd(StatusNoCheck, format, args...)
 	if err != nil {
 		defer func() {
-			if closeErr := conn.Close(); closeErr != nil {
+			if closeErr := tcpConn.Close(); closeErr != nil {
 				err = closeErr
 			}
 		}()
@@ -401,12 +410,15 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 
 	if code != StatusAlreadyOpen && code != StatusAboutToSend {
 		defer func() {
-			if closeErr := conn.Close(); closeErr != nil {
+			if closeErr := tcpConn.Close(); closeErr != nil {
 				err = closeErr
 			}
 		}()
 		return nil, ftperrors.NewInternalError(msg, nil)
 	}
+
+	// wrap newly establish connection connection
+	conn = c.dialOptions.wrapConnection(tcpConn)
 
 	return conn, nil
 }
@@ -416,31 +428,16 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 func (c *serverConnection) updateFeatures() error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandFeat)
 	if err != nil {
-		return ftperrors.NewInternalError(msg, err)
+		return ftperrors.NewInternalError("failed to list supported features", err)
 	}
 
-	if code != StatusSystem {
+	if code != StatusSystem || msg == "" {
 		// The server does not support the FEAT command. This is not an
 		// error, as we consider that there is no additional features.
 		return nil
 	}
 
-	msg = strings.ToLower(msg)
-	features := make(map[string]string, 0)
-	for _, line := range strings.Split(msg, "\n") {
-		if strings.Contains(line, "features") || strings.Contains(line, "end") {
-			continue
-		}
-		line = strings.TrimSpace(line)
-		const tokenSize = 2
-		tokens := strings.SplitN(line, " ", tokenSize)
-
-		var cmdDesc string
-		if len(tokens) == tokenSize {
-			cmdDesc = tokens[1]
-		}
-		features[tokens[0]] = cmdDesc
-	}
+	features := c.getFeaturesMap(msg)
 
 	if _, ok := features[FeatureMLST]; ok && !c.dialOptions.disableMLST {
 		c.mlstSupported = true
@@ -452,7 +449,7 @@ func (c *serverConnection) updateFeatures() error {
 
 	// switch to binary mode
 	if _, _, cmdErr := c.cmd(StatusCommandOK, CommandType, TransferTypeBinary); cmdErr != nil {
-		return ftperrors.NewInternalError("failed to set transfer type to binary mode", cmdErr)
+		return ftperrors.NewInternalError("failed to set binary transfer mode", cmdErr)
 	}
 
 	if _, ok := features[FeatureUTF8]; ok && !c.dialOptions.disableUTF8 {
@@ -467,11 +464,33 @@ func (c *serverConnection) updateFeatures() error {
 			return ftperrors.NewInternalError("failed to set protocol buffer size", err)
 		}
 		if _, _, err = c.cmd(StatusCommandOK, CommandProtocol); err != nil {
-			return ftperrors.NewInternalError("failed to set protocol", err)
+			return ftperrors.NewInternalError("failed to enable TLS protocol", err)
 		}
 	}
 
 	return nil
+}
+
+// getFeaturesMap function processes value parameter returned by the FEAT command and
+// composes a map[COMMAND]COMMAND_DESC of supporter server features.
+func (c *serverConnection) getFeaturesMap(value string) map[string]string {
+	features := make(map[string]string, 0)
+	for _, line := range strings.Split(value, "\n") {
+		loweredLine := strings.ToLower(line)
+		if strings.Contains(loweredLine, "features") || strings.Contains(loweredLine, "end") {
+			continue
+		}
+		line = strings.TrimSpace(line)
+		const tokenSize = 2
+		tokens := strings.SplitN(line, " ", tokenSize)
+
+		var cmdDesc string
+		if len(tokens) == tokenSize {
+			cmdDesc = tokens[1]
+		}
+		features[tokens[0]] = cmdDesc
+	}
+	return features
 }
 
 // setUTF8 function sets UTF-8 format on connected server. If server does not support this option,
@@ -495,7 +514,7 @@ func (c *serverConnection) setUTF8() error {
 	}
 
 	if code != StatusCommandOK {
-		return ftperrors.NewInternalError(msg, nil)
+		return errors.New(msg)
 	}
 	return nil
 }

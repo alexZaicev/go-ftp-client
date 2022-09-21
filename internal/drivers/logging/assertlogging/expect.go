@@ -2,13 +2,14 @@ package assertlogging
 
 import (
 	"fmt"
-	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 )
 
 var (

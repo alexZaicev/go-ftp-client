@@ -58,7 +58,6 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 		input.Address,
 		input.User,
 		input.Password,
-		input.Timeout,
 		input.Verbose,
 	)
 	if err != nil {
