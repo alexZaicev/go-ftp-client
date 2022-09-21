@@ -41,8 +41,8 @@ func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *U
 		if err := repos.Connection.Cd(dirPath); err != nil {
 			var notFoundErr *ftperrors.NotFoundError
 			if errors.As(err, &notFoundErr) {
-				repos.Logger.Error(fmt.Sprintf("directory %s not found", dirPath))
-				return ftperrors.NewNotFoundError(fmt.Sprintf("directory %s not found", dirPath), nil)
+				repos.Logger.WithError(notFoundErr).Error(fmt.Sprintf("directory %s not found", dirPath))
+				return notFoundErr
 			}
 
 			repos.Logger.WithError(err).Error("failed to change directory")
@@ -68,7 +68,12 @@ func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *U
 
 	if sizeInBytes != input.SizeInBytes {
 		msg := fmt.Sprintf("uploaded file size %d does not match the actual %d", sizeInBytes, input.SizeInBytes)
-		repos.Logger.WithError(err).Error(msg)
+		repos.Logger.WithFields(
+			logging.Fields{
+				"actual-size-in-bytes":   input.SizeInBytes,
+				"uploaded-size-in-bytes": sizeInBytes,
+			},
+		).Error(msg)
 		return ftperrors.NewInternalError(msg, nil)
 	}
 

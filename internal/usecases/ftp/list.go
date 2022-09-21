@@ -29,7 +29,7 @@ type ListFilesRepos struct {
 type ListFiles struct {
 }
 
-func (u *ListFiles) Execute(ctx context.Context, repos *ListFilesRepos, input *ListFilesInput) ([]*entities.Entry, error) {
+func (u *ListFiles) Execute(_ context.Context, repos *ListFilesRepos, input *ListFilesInput) ([]*entities.Entry, error) {
 	listOptions := &connection.ListOptions{
 		Path:    input.Path,
 		ShowAll: input.ShowAll,
