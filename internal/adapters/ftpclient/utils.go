@@ -3,7 +3,6 @@ package ftpclient
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
@@ -42,15 +41,15 @@ func Connect(
 	password string,
 	verbose bool,
 ) (conn connection.Connection, err error) {
-	var vw io.Writer
+	options := make([]ftpconnection.Option, 0)
 	if verbose {
-		vw = os.Stdout
+		options = append(options, ftpconnection.WithVerboseWriter(os.Stdout))
 	}
 
-	conn, err = ftpconnection.Dial(
+	conn, err = ftpconnection.DialContext(
 		ctx,
 		address,
-		ftpconnection.WithVerboseWriter(vw),
+		options...,
 	)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to establish connection", err)

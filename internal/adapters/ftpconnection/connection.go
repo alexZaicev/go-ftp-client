@@ -2,6 +2,7 @@ package ftpconnection
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -47,12 +48,6 @@ const (
 
 	Off = "OFF"
 	On  = "ON"
-
-	FeatureMLST = "MLST"
-	FeatureMDTM = "MDTM"
-	FeatureMFMT = "MFMT"
-	FeaturePRET = "PRET"
-	FeatureUTF8 = "UTF8"
 )
 
 type TransferType string
@@ -65,6 +60,8 @@ const (
 const (
 	decimalBase = 10
 	bitSize     = 64
+
+	defaultShutTimeout = 500 * time.Millisecond
 )
 
 type TextConnection interface {
@@ -73,30 +70,43 @@ type TextConnection interface {
 	Close() error
 }
 
-type serverConnection struct {
-	dialOptions *DialOptions
-	host        string
-	conn        TextConnection
-	tcpConn     net.Conn
-	parser      parsers.Parser
-
-	// server features
-	mlstSupported bool
-	mdtmSupported bool
-	mfmtSupported bool
-	usePRET       bool
-	mdtmCanWrite  bool
-	skipEPSV      bool
+type Dialer interface {
+	Dial(network, address string) (net.Conn, error)
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+	DialContextTLS(ctx context.Context, network, address string, tlsConfig *tls.Config) (net.Conn, error)
 }
 
-func newConnection(
+type ServerConnection struct {
+	host string
+
+	dialer Dialer
+
+	conn    TextConnection
+	tcpConn net.Conn
+
+	parser parsers.Parser
+
+	features *serverFeatures
+
+	disableUTF8   bool
+	disableEPSV   bool
+	verboseWriter io.Writer
+	tlsConfig     *tls.Config
+	shutTimeout   time.Duration
+}
+
+func NewConnection(
 	host string,
+	dialer Dialer,
 	conn net.Conn,
 	textConn TextConnection,
-	options *DialOptions,
+	options ...Option,
 ) (connection.Connection, error) {
 	if host == "" {
 		return nil, ftperrors.NewInvalidArgumentError("host", ftperrors.ErrMsgCannotBeBlank)
+	}
+	if dialer == nil {
+		return nil, ftperrors.NewInvalidArgumentError("dialer", ftperrors.ErrMsgCannotBeNil)
 	}
 	if conn == nil {
 		return nil, ftperrors.NewInvalidArgumentError("conn", ftperrors.ErrMsgCannotBeNil)
@@ -104,20 +114,28 @@ func newConnection(
 	if textConn == nil {
 		return nil, ftperrors.NewInvalidArgumentError("textConn", ftperrors.ErrMsgCannotBeNil)
 	}
-	if options == nil {
-		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
-	}
-	return &serverConnection{
-		dialOptions: options,
+
+	sc := &ServerConnection{
 		host:        host,
+		dialer:      dialer,
 		tcpConn:     conn,
 		conn:        textConn,
 		parser:      parsers.NewGenericListParser(),
-	}, nil
+		features:    &serverFeatures{},
+		shutTimeout: defaultShutTimeout,
+	}
+
+	for _, opt := range options {
+		if err := opt(sc); err != nil {
+			return nil, err
+		}
+	}
+
+	return sc, nil
 }
 
 // Ready function validates that the FTP server is ready to proceed.
-func (c *serverConnection) Ready() (err error) {
+func (c *ServerConnection) Ready() (err error) {
 	if _, _, readErr := c.conn.ReadResponse(StatusReady); readErr != nil {
 		defer func() {
 			if stopErr := c.Stop(); stopErr != nil {
@@ -130,7 +148,7 @@ func (c *serverConnection) Ready() (err error) {
 }
 
 // EnableExplicitTLSMode function enables TLS modes on established TCP connection.
-func (c *serverConnection) EnableExplicitTLSMode() (err error) {
+func (c *ServerConnection) EnableExplicitTLSMode() (err error) {
 	if _, _, readErr := c.cmd(StatusAuthOK, CommandAuthTLS); readErr != nil {
 		defer func() {
 			if stopErr := c.Stop(); stopErr != nil {
@@ -139,14 +157,14 @@ func (c *serverConnection) EnableExplicitTLSMode() (err error) {
 		}()
 		return ftperrors.NewInternalError("failed to enable explicit TLS mode", readErr)
 	}
-	tlsConn := tls.Client(c.tcpConn, c.dialOptions.tlsConfig)
+	tlsConn := tls.Client(c.tcpConn, c.tlsConfig)
 	c.tcpConn = tlsConn
-	c.conn = textproto.NewConn(c.dialOptions.wrapConnection(tlsConn))
+	c.conn = textproto.NewConn(c.wrapConnection(tlsConn))
 	return nil
 }
 
 // Stop function sends a quit command to FTP server and closes the TCP connection.
-func (c *serverConnection) Stop() (err error) {
+func (c *ServerConnection) Stop() (err error) {
 	defer func() {
 		if closeErr := c.conn.Close(); closeErr != nil {
 			err = ftperrors.NewInternalError("failed to close connection", closeErr)
@@ -160,7 +178,7 @@ func (c *serverConnection) Stop() (err error) {
 
 // Login function authenticate user with provided account username and password. Upon successful authentication,
 // server is then queried to list supported features to update connection settings at runtime.
-func (c *serverConnection) Login(user, password string) error {
+func (c *ServerConnection) Login(user, password string) error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandUser, user)
 	if err != nil {
 		return ftperrors.NewInternalError("failed to start username authentication", err)
@@ -183,19 +201,19 @@ func (c *serverConnection) Login(user, password string) error {
 	return nil
 }
 
-func (c *serverConnection) List(options *connection.ListOptions) (entries []*entities.Entry, err error) {
+func (c *ServerConnection) List(ctx context.Context, options *connection.ListOptions) (entries []*entities.Entry, err error) {
 	if options == nil {
 		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
 	cmd := CommandList
-	if c.mlstSupported {
+	if c.features.supportMLST {
 		cmd = CommandListMachineReadable
 	} else if options.ShowAll {
 		cmd = CommandListHidden
 	}
 
-	conn, err := c.cmdWithDataConn(0, cmd, options.Path)
+	conn, err := c.cmdWithDataConn(ctx, 0, cmd, options.Path)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to list files", err)
 	}
@@ -217,7 +235,7 @@ func (c *serverConnection) List(options *connection.ListOptions) (entries []*ent
 	return entries, nil
 }
 
-func (c *serverConnection) Mkdir(path string) error {
+func (c *ServerConnection) Mkdir(path string) error {
 	if path == "" {
 		return ftperrors.NewInvalidArgumentError("path", ftperrors.ErrMsgCannotBeBlank)
 	}
@@ -257,7 +275,7 @@ func (c *serverConnection) Mkdir(path string) error {
 	return nil
 }
 
-func (c *serverConnection) Status() (*entities.Status, error) {
+func (c *ServerConnection) Status() (*entities.Status, error) {
 	_, msg, err := c.cmd(StatusSystem, CommandStatus)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to fetch server status", err)
@@ -306,12 +324,12 @@ func (c *serverConnection) Status() (*entities.Status, error) {
 	return status, nil
 }
 
-func (c *serverConnection) Upload(options *connection.UploadOptions) error {
+func (c *ServerConnection) Upload(ctx context.Context, options *connection.UploadOptions) error {
 	if options == nil {
 		return ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
-	conn, err := c.cmdWithDataConn(0, CommandStore, options.Path)
+	conn, err := c.cmdWithDataConn(ctx, 0, CommandStore, options.Path)
 	if err != nil {
 		return err
 	}
@@ -339,7 +357,7 @@ func (c *serverConnection) Upload(options *connection.UploadOptions) error {
 	return nil
 }
 
-func (c *serverConnection) Cd(path string) error {
+func (c *ServerConnection) Cd(path string) error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandChangeWorkDir, path)
 	if err != nil {
 		return ftperrors.NewInternalError("failed to change working directory", err)
@@ -353,7 +371,7 @@ func (c *serverConnection) Cd(path string) error {
 	return ftperrors.NewInternalError(msg, nil)
 }
 
-func (c *serverConnection) Size(path string) (uint64, error) {
+func (c *ServerConnection) Size(path string) (uint64, error) {
 	_, msg, err := c.cmd(StatusFile, CommandSize, path)
 	if err != nil {
 		return 0, ftperrors.NewInternalError("failed to fetch file size", err)
@@ -366,23 +384,28 @@ func (c *serverConnection) Size(path string) (uint64, error) {
 }
 
 // cmd function executes a command and validates the expected response code.
-func (c *serverConnection) cmd(expectedStatusCode int, format string, args ...any) (code int, msg string, err error) {
+func (c *ServerConnection) cmd(expectedStatusCode int, format string, args ...any) (code int, msg string, err error) {
 	if _, err = c.conn.Cmd(format, args...); err != nil {
 		return 0, "", err
 	}
 	return c.conn.ReadResponse(expectedStatusCode)
 }
 
-func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...any) (conn io.ReadWriteCloser, err error) {
+func (c *ServerConnection) cmdWithDataConn(
+	ctx context.Context,
+	offset uint,
+	format string,
+	args ...any,
+) (conn io.ReadWriteCloser, err error) {
 	// For more information on PRET see: https://datatracker.ietf.org/doc/html/draft-dd-pret-00
-	if c.usePRET {
+	if c.features.supportPRET {
 		_, _, cmdErr := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
 		if cmdErr != nil {
 			return nil, ftperrors.NewInternalError("failed to issue pre-transfer configuration", cmdErr)
 		}
 	}
 
-	tcpConn, err := c.openDataConn()
+	tcpConn, err := c.openDataConn(ctx)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to open new data connection", err)
 	}
@@ -418,14 +441,14 @@ func (c *serverConnection) cmdWithDataConn(offset uint, format string, args ...a
 	}
 
 	// wrap newly establish connection connection
-	conn = c.dialOptions.wrapConnection(tcpConn)
+	conn = c.wrapConnection(tcpConn)
 
 	return conn, nil
 }
 
 // updateFeatures function queries FTP server for supported features and adjusts connection settings
 // based on user and received settings.
-func (c *serverConnection) updateFeatures() error {
+func (c *ServerConnection) updateFeatures() error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandFeat)
 	if err != nil {
 		return ftperrors.NewInternalError("failed to list supported features", err)
@@ -438,28 +461,21 @@ func (c *serverConnection) updateFeatures() error {
 	}
 
 	features := c.getFeaturesMap(msg)
-
-	if _, ok := features[FeatureMLST]; ok && !c.dialOptions.disableMLST {
-		c.mlstSupported = true
-	}
-	_, c.usePRET = features[FeaturePRET]
-	_, c.mdtmSupported = features[FeatureMDTM]
-	_, c.mfmtSupported = features[FeatureMFMT]
-	c.mdtmCanWrite = c.mdtmSupported && c.dialOptions.writingMDTM
+	c.features = newServerFeatures(features)
 
 	// switch to binary mode
 	if _, _, cmdErr := c.cmd(StatusCommandOK, CommandType, TransferTypeBinary); cmdErr != nil {
 		return ftperrors.NewInternalError("failed to set binary transfer mode", cmdErr)
 	}
 
-	if _, ok := features[FeatureUTF8]; ok && !c.dialOptions.disableUTF8 {
+	if c.features.supportUTF8 && !c.disableUTF8 {
 		if utfErr := c.setUTF8(); utfErr != nil {
 			return ftperrors.NewInternalError("failed to turn UTF-8 option on", utfErr)
 		}
 	}
 
 	// If using implicit TLS, make data connections also use TLS
-	if c.dialOptions.tlsConfig != nil {
+	if c.tlsConfig != nil {
 		if _, _, err = c.cmd(StatusCommandOK, CommandProtectionBufferSize); err != nil {
 			return ftperrors.NewInternalError("failed to set protocol buffer size", err)
 		}
@@ -473,7 +489,7 @@ func (c *serverConnection) updateFeatures() error {
 
 // getFeaturesMap function processes value parameter returned by the FEAT command and
 // composes a map[COMMAND]COMMAND_DESC of supporter server features.
-func (c *serverConnection) getFeaturesMap(value string) map[string]string {
+func (c *ServerConnection) getFeaturesMap(value string) map[string]string {
 	features := make(map[string]string, 0)
 	for _, line := range strings.Split(value, "\n") {
 		loweredLine := strings.ToLower(line)
@@ -495,7 +511,7 @@ func (c *serverConnection) getFeaturesMap(value string) map[string]string {
 
 // setUTF8 function sets UTF-8 format on connected server. If server does not support this option,
 // it's ignored.
-func (c *serverConnection) setUTF8() error {
+func (c *ServerConnection) setUTF8() error {
 	code, msg, err := c.cmd(StatusNoCheck, CommandOptions, FeatureUTF8, On)
 	if err != nil {
 		return err
@@ -521,7 +537,7 @@ func (c *serverConnection) setUTF8() error {
 
 // setPassiveMode function sets server into passive mode retrieving host and port for
 // future data connection.
-func (c *serverConnection) setPassiveMode() (string, error) {
+func (c *ServerConnection) setPassiveMode() (string, error) {
 	// Response of the command: Entering Passive Mode (h1,h2,h3,h4,p1,p2).
 	_, msg, err := c.cmd(StatusPassiveMode, CommandPassive)
 	if err != nil {
@@ -558,7 +574,7 @@ func (c *serverConnection) setPassiveMode() (string, error) {
 
 // setPassiveMode function sets server into extended passive mode retrieving port for
 // future data connection.
-func (c *serverConnection) setExtendedPassiveMode() (string, error) {
+func (c *ServerConnection) setExtendedPassiveMode() (string, error) {
 	_, msg, err := c.cmd(StatusExtendedPassiveMode, CommandExtendedPassiveMode)
 	if err != nil {
 		return "", ftperrors.NewInternalError("failed to set extended passive mode", err)
@@ -583,37 +599,47 @@ func (c *serverConnection) setExtendedPassiveMode() (string, error) {
 
 // getDataConnPort function retrieves data connection port by setting server into extended or standard
 // passive mode.
-func (c *serverConnection) getDataConnPort() (string, error) {
-	if !c.dialOptions.disableEPSV && !c.skipEPSV {
-		if port, err := c.setExtendedPassiveMode(); err == nil {
-			return fmt.Sprintf("%s:%s", c.host, port), nil
+func (c *ServerConnection) getDataConnPort() (string, error) {
+	if !c.disableEPSV && c.features.supportEPSV {
+		port, err := c.setExtendedPassiveMode()
+		if err != nil {
+			return "", err
 		}
-		c.skipEPSV = true
+		return fmt.Sprintf("%s:%s", c.host, port), nil
 	}
 	return c.setPassiveMode()
 }
 
 // openDataConn function opens a new connection on address provided dynamically by the server.
-func (c *serverConnection) openDataConn() (net.Conn, error) {
+func (c *ServerConnection) openDataConn(ctx context.Context) (net.Conn, error) {
 	address, err := c.getDataConnPort()
 	if err != nil {
 		return nil, err
 	}
 	// TODO: add custom dial function
-	if c.dialOptions.tlsConfig != nil {
-		return tls.DialWithDialer(c.dialOptions.dialer, "tcp", address, c.dialOptions.tlsConfig)
+	if c.tlsConfig != nil {
+		return c.dialer.DialContextTLS(ctx, "tcp", address, c.tlsConfig)
 	}
-	return c.dialOptions.dialer.Dial("tcp", address)
+	return c.dialer.Dial("tcp", address)
 }
 
 // checkDataConnShut function validates whether data connection is closed.
-func (c *serverConnection) checkDataConnShut() error {
-	if c.dialOptions.shutTimeout != 0 {
-		shutDeadline := time.Now().Add(c.dialOptions.shutTimeout)
+func (c *ServerConnection) checkDataConnShut() error {
+	if c.shutTimeout != 0 {
+		shutDeadline := time.Now().Add(c.shutTimeout)
 		if err := c.tcpConn.SetDeadline(shutDeadline); err != nil {
 			return err
 		}
 	}
 	_, _, err := c.conn.ReadResponse(StatusClosingDataConnection)
 	return err
+}
+
+// wrapConnection function wraps TCP connection with verbose writer providing the ability
+// to debug incoming/outgoing server communications.
+func (c *ServerConnection) wrapConnection(conn net.Conn) io.ReadWriteCloser {
+	if c.verboseWriter == nil {
+		return conn
+	}
+	return newVerboseConnectionWrapper(conn, c.verboseWriter)
 }

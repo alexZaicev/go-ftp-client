@@ -3,7 +3,10 @@
 package mocks
 
 import (
+	context "context"
+
 	connection "github.com/alexZaicev/go-ftp-client/internal/domain/connection"
+
 	entities "github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 
 	mock "github.com/stretchr/testify/mock"
@@ -42,13 +45,13 @@ func (_m *Connection) EnableExplicitTLSMode() error {
 	return r0
 }
 
-// List provides a mock function with given fields: options
-func (_m *Connection) List(options *connection.ListOptions) ([]*entities.Entry, error) {
-	ret := _m.Called(options)
+// List provides a mock function with given fields: ctx, options
+func (_m *Connection) List(ctx context.Context, options *connection.ListOptions) ([]*entities.Entry, error) {
+	ret := _m.Called(ctx, options)
 
 	var r0 []*entities.Entry
-	if rf, ok := ret.Get(0).(func(*connection.ListOptions) []*entities.Entry); ok {
-		r0 = rf(options)
+	if rf, ok := ret.Get(0).(func(context.Context, *connection.ListOptions) []*entities.Entry); ok {
+		r0 = rf(ctx, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*entities.Entry)
@@ -56,8 +59,8 @@ func (_m *Connection) List(options *connection.ListOptions) ([]*entities.Entry, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*connection.ListOptions) error); ok {
-		r1 = rf(options)
+	if rf, ok := ret.Get(1).(func(context.Context, *connection.ListOptions) error); ok {
+		r1 = rf(ctx, options)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -165,13 +168,13 @@ func (_m *Connection) Stop() error {
 	return r0
 }
 
-// Upload provides a mock function with given fields: options
-func (_m *Connection) Upload(options *connection.UploadOptions) error {
-	ret := _m.Called(options)
+// Upload provides a mock function with given fields: ctx, options
+func (_m *Connection) Upload(ctx context.Context, options *connection.UploadOptions) error {
+	ret := _m.Called(ctx, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*connection.UploadOptions) error); ok {
-		r0 = rf(options)
+	if rf, ok := ret.Get(0).(func(context.Context, *connection.UploadOptions) error); ok {
+		r0 = rf(ctx, options)
 	} else {
 		r0 = ret.Error(0)
 	}

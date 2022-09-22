@@ -31,7 +31,7 @@ type UploadFileRepos struct {
 type UploadFile struct {
 }
 
-func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *UploadFileInput) error {
+func (u *UploadFile) Execute(ctx context.Context, repos *UploadFileRepos, input *UploadFileInput) error {
 	dirPath, fileName := filepath.Split(input.RemotePath)
 	if strings.HasSuffix(dirPath, string(filepath.Separator)) {
 		dirPath = dirPath[:len(dirPath)-1]
@@ -55,7 +55,7 @@ func (u *UploadFile) Execute(_ context.Context, repos *UploadFileRepos, input *U
 		Path:       fileName,
 	}
 
-	if err := repos.Connection.Upload(options); err != nil {
+	if err := repos.Connection.Upload(ctx, options); err != nil {
 		repos.Logger.WithError(err).Error("failed to upload file")
 		return ftperrors.NewInternalError("failed to upload file", nil)
 	}

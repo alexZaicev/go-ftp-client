@@ -88,10 +88,13 @@ func Test_ListFiles_Execute_Success(t *testing.T) {
 
 			connMock := connectionMocks.NewConnection(t)
 			connMock.
-				On("List", &connection.ListOptions{
-					Path:    dirPath,
-					ShowAll: true,
-				}).
+				On(
+					"List",
+					ctx,
+					&connection.ListOptions{
+						Path:    dirPath,
+						ShowAll: true,
+					}).
 				Return(tc.entries, nil).
 				Once()
 
@@ -127,10 +130,13 @@ func Test_ListFiles_Execute_ListError(t *testing.T) {
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("List", &connection.ListOptions{
-			Path:    dirPath,
-			ShowAll: true,
-		}).
+		On(
+			"List",
+			ctx,
+			&connection.ListOptions{
+				Path:    dirPath,
+				ShowAll: true,
+			}).
 		Return(nil, errors.New("mock error")).
 		Once()
 
@@ -159,10 +165,13 @@ func Test_ListFiles_Execute_NotFoundError(t *testing.T) {
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("List", &connection.ListOptions{
-			Path:    dirPath,
-			ShowAll: true,
-		}).
+		On(
+			"List",
+			ctx,
+			&connection.ListOptions{
+				Path:    dirPath,
+				ShowAll: true,
+			}).
 		Return(nil, nil).
 		Once()
 

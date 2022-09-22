@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"context"
 	"io"
 
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
@@ -21,10 +22,10 @@ type Connection interface {
 	Stop() error
 	Login(user, password string) error
 	EnableExplicitTLSMode() error
-	List(options *ListOptions) ([]*entities.Entry, error)
+	List(ctx context.Context, options *ListOptions) ([]*entities.Entry, error)
 	Status() (*entities.Status, error)
 	Mkdir(path string) error
-	Upload(options *UploadOptions) error
+	Upload(ctx context.Context, options *UploadOptions) error
 	Cd(path string) error
 	Size(path string) (uint64, error)
 }

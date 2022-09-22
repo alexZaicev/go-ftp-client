@@ -26,10 +26,13 @@ func Test_UploadFile_Execute_NoDirSuccess(t *testing.T) {
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("Upload", &connection.UploadOptions{
-			Path:       fileName,
-			FileReader: buffer,
-		}).
+		On(
+			"Upload",
+			ctx,
+			&connection.UploadOptions{
+				Path:       fileName,
+				FileReader: buffer,
+			}).
 		Return(nil).
 		Once()
 	connMock.
@@ -65,10 +68,13 @@ func Test_UploadFile_Execute_WithDirSuccess(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Upload", &connection.UploadOptions{
-			Path:       fileName,
-			FileReader: buffer,
-		}).
+		On(
+			"Upload",
+			ctx,
+			&connection.UploadOptions{
+				Path:       fileName,
+				FileReader: buffer,
+			}).
 		Return(nil).
 		Once()
 	connMock.
@@ -173,10 +179,13 @@ func Test_UploadFile_Execute_UploadError(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Upload", &connection.UploadOptions{
-			Path:       fileName,
-			FileReader: buffer,
-		}).
+		On(
+			"Upload",
+			ctx,
+			&connection.UploadOptions{
+				Path:       fileName,
+				FileReader: buffer,
+			}).
 		Return(errors.New("mock error")).
 		Once()
 
@@ -213,10 +222,13 @@ func Test_UploadFile_Execute_SizeError(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Upload", &connection.UploadOptions{
-			Path:       fileName,
-			FileReader: buffer,
-		}).
+		On(
+			"Upload",
+			ctx,
+			&connection.UploadOptions{
+				Path:       fileName,
+				FileReader: buffer,
+			}).
 		Return(nil).
 		Once()
 	connMock.
@@ -262,10 +274,13 @@ func Test_UploadFile_Execute_SizeMismatchError(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Upload", &connection.UploadOptions{
-			Path:       fileName,
-			FileReader: buffer,
-		}).
+		On(
+			"Upload",
+			ctx,
+			&connection.UploadOptions{
+				Path:       fileName,
+				FileReader: buffer,
+			}).
 		Return(nil).
 		Once()
 	connMock.

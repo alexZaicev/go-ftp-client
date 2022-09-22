@@ -16,14 +16,13 @@ import (
 )
 
 func Test_ServerConnection_Ready_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", nil)
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Ready()
@@ -31,16 +30,15 @@ func Test_ServerConnection_Ready_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Ready_ReadResponseError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", errors.New("mock error"))
 	connMock.On("Cmd", ftpconnection.CommandQuit).Return(uid, nil)
 	connMock.On("Close").Return(nil)
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Ready()
@@ -50,16 +48,15 @@ func Test_ServerConnection_Ready_ReadResponseError(t *testing.T) {
 }
 
 func Test_ServerConnection_Ready_StopError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", errors.New("mock error"))
 	connMock.On("Cmd", ftpconnection.CommandQuit).Return(uid, nil)
 	connMock.On("Close").Return(errors.New("mock error"))
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Ready()
@@ -69,15 +66,14 @@ func Test_ServerConnection_Ready_StopError(t *testing.T) {
 }
 
 func Test_ServerConnection_EnableExplicitTLSMode_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.On("Cmd", ftpconnection.CommandAuthTLS).Return(uid, nil)
 	connMock.On("ReadResponse", ftpconnection.StatusAuthOK).Return(0, "", nil)
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.EnableExplicitTLSMode()
@@ -85,10 +81,9 @@ func Test_ServerConnection_EnableExplicitTLSMode_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_EnableExplicitTLSMode_CmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandAuthTLS).
@@ -103,7 +98,7 @@ func Test_ServerConnection_EnableExplicitTLSMode_CmdError(t *testing.T) {
 		Return(nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.EnableExplicitTLSMode()
@@ -113,10 +108,9 @@ func Test_ServerConnection_EnableExplicitTLSMode_CmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_EnableExplicitTLSMode_StopError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandAuthTLS).
@@ -131,7 +125,7 @@ func Test_ServerConnection_EnableExplicitTLSMode_StopError(t *testing.T) {
 		Return(errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.EnableExplicitTLSMode()
@@ -141,10 +135,9 @@ func Test_ServerConnection_EnableExplicitTLSMode_StopError(t *testing.T) {
 }
 
 func Test_ServerConnection_Stop_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandQuit).
@@ -155,7 +148,7 @@ func Test_ServerConnection_Stop_Success(t *testing.T) {
 		Return(nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Stop()
@@ -163,10 +156,9 @@ func Test_ServerConnection_Stop_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Stop_CmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandQuit).
@@ -177,7 +169,7 @@ func Test_ServerConnection_Stop_CmdError(t *testing.T) {
 		Return(nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Stop()
@@ -187,10 +179,9 @@ func Test_ServerConnection_Stop_CmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Stop_CloseError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandQuit).
@@ -201,7 +192,7 @@ func Test_ServerConnection_Stop_CloseError(t *testing.T) {
 		Return(errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Stop()
@@ -235,10 +226,9 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			dialOptions := ftpconnection.NewDialOptions()
-
 			tcpConn := &net.TCPConn{}
 
+			dialer := ftpConnectionMocks.NewDialer(t)
 			connMock := ftpConnectionMocks.NewTextConnection(t)
 			connMock.
 				On("Cmd", ftpconnection.CommandUser, user).
@@ -281,7 +271,7 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 				Return(tc.utfStatusCode, "", nil).
 				Once()
 
-			serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+			serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 			require.NoError(t, err)
 
 			err = serverConn.Login(user, password)
@@ -291,14 +281,8 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_WithTLSConfig_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-	err := ftpconnection.WithTLSConfig(&tls.Config{
-		MinVersion: tls.VersionTLS13,
-	})(dialOptions)
-	require.NoError(t, err)
-
 	tcpConn := &net.TCPConn{}
-
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -349,7 +333,15 @@ func Test_ServerConnection_Login_WithTLSConfig_Success(t *testing.T) {
 		Return(uid, nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(
+		host,
+		dialer,
+		tcpConn,
+		connMock,
+		ftpconnection.WithTLSConfig(&tls.Config{
+			MinVersion: tls.VersionTLS13,
+		}),
+	)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -357,10 +349,9 @@ func Test_ServerConnection_Login_WithTLSConfig_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_AlreadyLoggerInUser_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -395,7 +386,7 @@ func Test_ServerConnection_Login_AlreadyLoggerInUser_Success(t *testing.T) {
 		Return(ftpconnection.StatusCommandOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -403,10 +394,9 @@ func Test_ServerConnection_Login_AlreadyLoggerInUser_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_FeatureCmdNotSupported_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -433,7 +423,7 @@ func Test_ServerConnection_Login_FeatureCmdNotSupported_Success(t *testing.T) {
 		Return(ftpconnection.StatusBadCommand, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -441,10 +431,9 @@ func Test_ServerConnection_Login_FeatureCmdNotSupported_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_NoUTF8Feature_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -479,7 +468,7 @@ func Test_ServerConnection_Login_NoUTF8Feature_Success(t *testing.T) {
 		Return(ftpconnection.StatusCommandOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -487,12 +476,9 @@ func Test_ServerConnection_Login_NoUTF8Feature_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-	err := ftpconnection.WithDisabledUTF8()(dialOptions)
-	require.NoError(t, err)
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -527,7 +513,13 @@ func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
 		Return(ftpconnection.StatusCommandOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(
+		host,
+		dialer,
+		tcpConn,
+		connMock,
+		ftpconnection.WithDisabledUTF8(),
+	)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -535,17 +527,16 @@ func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_UserCmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -555,10 +546,9 @@ func Test_ServerConnection_Login_UserCmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_InvalidStatusFromUserCmd(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -569,7 +559,7 @@ func Test_ServerConnection_Login_InvalidStatusFromUserCmd(t *testing.T) {
 		Return(ftpconnection.StatusBadArguments, "mock error", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -579,10 +569,9 @@ func Test_ServerConnection_Login_InvalidStatusFromUserCmd(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_PasswordError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -597,7 +586,7 @@ func Test_ServerConnection_Login_PasswordError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -607,10 +596,9 @@ func Test_ServerConnection_Login_PasswordError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_FeatureCmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -633,7 +621,7 @@ func Test_ServerConnection_Login_FeatureCmdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -643,10 +631,9 @@ func Test_ServerConnection_Login_FeatureCmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_TypeCmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -677,7 +664,7 @@ func Test_ServerConnection_Login_TypeCmdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -687,10 +674,9 @@ func Test_ServerConnection_Login_TypeCmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_UTF8CmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -729,7 +715,7 @@ func Test_ServerConnection_Login_UTF8CmdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -739,10 +725,9 @@ func Test_ServerConnection_Login_UTF8CmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_InvalidStatusFromUTF8Cmd(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -785,7 +770,7 @@ func Test_ServerConnection_Login_InvalidStatusFromUTF8Cmd(t *testing.T) {
 		Return(ftpconnection.StatusBadCommand, "mock error", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -795,14 +780,9 @@ func Test_ServerConnection_Login_InvalidStatusFromUTF8Cmd(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_BufferSizeCmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-	err := ftpconnection.WithTLSConfig(&tls.Config{
-		MinVersion: tls.VersionTLS13,
-	})(dialOptions)
-	require.NoError(t, err)
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -849,7 +829,15 @@ func Test_ServerConnection_Login_BufferSizeCmdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(
+		host,
+		dialer,
+		tcpConn,
+		connMock,
+		ftpconnection.WithTLSConfig(&tls.Config{
+			MinVersion: tls.VersionTLS13,
+		}),
+	)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -859,14 +847,9 @@ func Test_ServerConnection_Login_BufferSizeCmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Login_ProtocolCmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-	err := ftpconnection.WithTLSConfig(&tls.Config{
-		MinVersion: tls.VersionTLS13,
-	})(dialOptions)
-	require.NoError(t, err)
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandUser, user).
@@ -917,7 +900,15 @@ func Test_ServerConnection_Login_ProtocolCmdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(
+		host,
+		dialer,
+		tcpConn,
+		connMock,
+		ftpconnection.WithTLSConfig(&tls.Config{
+			MinVersion: tls.VersionTLS13,
+		}),
+	)
 	require.NoError(t, err)
 
 	err = serverConn.Login(user, password)
@@ -927,10 +918,9 @@ func Test_ServerConnection_Login_ProtocolCmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Cd_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
@@ -941,7 +931,7 @@ func Test_ServerConnection_Cd_Success(t *testing.T) {
 		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Cd(remotePath)
@@ -949,10 +939,9 @@ func Test_ServerConnection_Cd_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
@@ -963,7 +952,7 @@ func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
 		Return(ftpconnection.StatusFileUnavailable, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Cd(remotePath)
@@ -973,17 +962,16 @@ func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
 }
 
 func Test_ServerConnection_Cd_CmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Cd(remotePath)
@@ -993,10 +981,9 @@ func Test_ServerConnection_Cd_CmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Cd_InvalidStatus(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
@@ -1007,7 +994,7 @@ func Test_ServerConnection_Cd_InvalidStatus(t *testing.T) {
 		Return(ftpconnection.StatusCommandNotImplemented, "mock error", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Cd(remotePath)
@@ -1017,10 +1004,9 @@ func Test_ServerConnection_Cd_InvalidStatus(t *testing.T) {
 }
 
 func Test_ServerConnection_Size_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandSize, remotePath).
@@ -1031,7 +1017,7 @@ func Test_ServerConnection_Size_Success(t *testing.T) {
 		Return(ftpconnection.StatusFile, "1024", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	sizeInBytes, err := serverConn.Size(remotePath)
@@ -1040,17 +1026,16 @@ func Test_ServerConnection_Size_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Size_CmdError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandSize, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	sizeInBytes, err := serverConn.Size(remotePath)
@@ -1061,10 +1046,9 @@ func Test_ServerConnection_Size_CmdError(t *testing.T) {
 }
 
 func Test_ServerConnection_Size_ParseError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandSize, remotePath).
@@ -1075,7 +1059,7 @@ func Test_ServerConnection_Size_ParseError(t *testing.T) {
 		Return(ftpconnection.StatusFile, "no-a-number", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	sizeInBytes, err := serverConn.Size(remotePath)
@@ -1086,10 +1070,9 @@ func Test_ServerConnection_Size_ParseError(t *testing.T) {
 }
 
 func Test_ServerConnection_Status_Success(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandStatus).
@@ -1108,7 +1091,7 @@ func Test_ServerConnection_Status_Success(t *testing.T) {
 		Return(ftpconnection.StatusName, systemMsg, nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	status, err := serverConn.Status()
@@ -1121,17 +1104,16 @@ func Test_ServerConnection_Status_Success(t *testing.T) {
 }
 
 func Test_ServerConnection_Status_StatusCmdErr(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandStatus).
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	status, err := serverConn.Status()
@@ -1142,10 +1124,9 @@ func Test_ServerConnection_Status_StatusCmdErr(t *testing.T) {
 }
 
 func Test_ServerConnection_Status_SystemCmdErr(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandStatus).
@@ -1160,7 +1141,7 @@ func Test_ServerConnection_Status_SystemCmdErr(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	status, err := serverConn.Status()
@@ -1171,12 +1152,11 @@ func Test_ServerConnection_Status_SystemCmdErr(t *testing.T) {
 }
 
 func Test_ServerConnection_Mkdir_InvalidArgumentError(t *testing.T) {
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir("")
@@ -1188,10 +1168,9 @@ func Test_ServerConnection_Mkdir_InvalidArgumentError(t *testing.T) {
 func Test_ServerConnection_Mkdir_1dPath_Success(t *testing.T) {
 	const path = "/foo"
 
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
@@ -1218,7 +1197,7 @@ func Test_ServerConnection_Mkdir_1dPath_Success(t *testing.T) {
 		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir(path)
@@ -1228,10 +1207,9 @@ func Test_ServerConnection_Mkdir_1dPath_Success(t *testing.T) {
 func Test_ServerConnection_Mkdir_2dPath_Success(t *testing.T) {
 	const path = "foo/bar"
 
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, "/foo").
@@ -1266,7 +1244,7 @@ func Test_ServerConnection_Mkdir_2dPath_Success(t *testing.T) {
 		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir(path)
@@ -1278,8 +1256,7 @@ func Test_ServerConnection_Mkdir_CheckDirExistsError(t *testing.T) {
 
 	tcpConn := &net.TCPConn{}
 
-	dialOptions := ftpconnection.NewDialOptions()
-
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
@@ -1290,7 +1267,7 @@ func Test_ServerConnection_Mkdir_CheckDirExistsError(t *testing.T) {
 		Return(ftpconnection.StatusBadCommand, "mock error", errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir(path)
@@ -1304,8 +1281,7 @@ func Test_ServerConnection_Mkdir_MakeDirError(t *testing.T) {
 
 	tcpConn := &net.TCPConn{}
 
-	dialOptions := ftpconnection.NewDialOptions()
-
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
@@ -1324,7 +1300,7 @@ func Test_ServerConnection_Mkdir_MakeDirError(t *testing.T) {
 		Return(ftpconnection.StatusBadCommand, "mock error", errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir(path)
@@ -1336,10 +1312,9 @@ func Test_ServerConnection_Mkdir_MakeDirError(t *testing.T) {
 func Test_ServerConnection_Mkdir_CdError(t *testing.T) {
 	const path = "/foo"
 
-	dialOptions := ftpconnection.NewDialOptions()
-
 	tcpConn := &net.TCPConn{}
 
+	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
 		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
@@ -1362,7 +1337,7 @@ func Test_ServerConnection_Mkdir_CdError(t *testing.T) {
 		Return(uid, errors.New("mock error")).
 		Once()
 
-	serverConn, err := ftpconnection.NewServerConnection(host, tcpConn, connMock, dialOptions)
+	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
 
 	err = serverConn.Mkdir(path)

@@ -29,12 +29,12 @@ type ListFilesRepos struct {
 type ListFiles struct {
 }
 
-func (u *ListFiles) Execute(_ context.Context, repos *ListFilesRepos, input *ListFilesInput) ([]*entities.Entry, error) {
+func (u *ListFiles) Execute(ctx context.Context, repos *ListFilesRepos, input *ListFilesInput) ([]*entities.Entry, error) {
 	listOptions := &connection.ListOptions{
 		Path:    input.Path,
 		ShowAll: input.ShowAll,
 	}
-	entries, err := repos.Connection.List(listOptions)
+	entries, err := repos.Connection.List(ctx, listOptions)
 	if err != nil {
 		repos.Logger.WithError(err).Error("failed to list files")
 		return nil, errors.NewInternalError("failed to list files", nil)

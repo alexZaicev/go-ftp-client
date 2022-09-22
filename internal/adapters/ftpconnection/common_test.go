@@ -9,9 +9,9 @@ const (
 	user     = "user01"
 	password = "pwd01"
 
-	//dateFormat = "2006-01-02 15:04"
+	// dateFormat = "2006-01-02 15:04"
 	//
-	//lastModificationDateFormat = "Jan 2 15:04"
+	// lastModificationDateFormat = "Jan 2 15:04"
 )
 
 // Feature messages returned by FEAT command
