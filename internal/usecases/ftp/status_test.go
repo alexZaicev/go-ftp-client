@@ -61,5 +61,5 @@ func Test_Status_Execute_Error(t *testing.T) {
 	assert.Nil(t, status)
 	require.EqualError(t, err, "an internal error occurred: failed to get server status")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }

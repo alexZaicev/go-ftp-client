@@ -155,7 +155,7 @@ func Test_ListFiles_Execute_ListError(t *testing.T) {
 	assert.Nil(t, entries)
 	require.EqualError(t, err, "an internal error occurred: failed to list files")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }
 
 func Test_ListFiles_Execute_NotFoundError(t *testing.T) {
@@ -190,5 +190,5 @@ func Test_ListFiles_Execute_NotFoundError(t *testing.T) {
 	assert.Nil(t, entries)
 	require.EqualError(t, err, fmt.Sprintf("not found error: no entries found under %s path", dirPath))
 	assert.IsType(t, ftperrors.NotFoundErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }

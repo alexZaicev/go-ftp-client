@@ -55,5 +55,5 @@ func Test_Mkdir_Execute_Error(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, "an internal error occurred: failed to create directory")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }

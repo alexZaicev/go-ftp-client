@@ -34,7 +34,7 @@ type InvalidArgumentError struct {
 func NewInvalidArgumentError(arg, msg string) *InvalidArgumentError {
 	return &InvalidArgumentError{
 		baseError: newBaseError(
-			fmt.Sprintf("an invalid argument error: argument %s %s", arg, msg),
+			fmt.Sprintf("an invalid argument error occurred: argument %s %s", arg, msg),
 			nil,
 		),
 	}

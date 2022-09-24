@@ -38,3 +38,10 @@ func WithDisabledUTF8() Option {
 		return nil
 	}
 }
+
+func WithDisabledEPSV() Option {
+	return func(conn *ServerConnection) error {
+		conn.disableEPSV = true
+		return nil
+	}
+}

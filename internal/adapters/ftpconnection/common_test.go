@@ -1,5 +1,10 @@
 package ftpconnection_test
 
+import (
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	mocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
+)
+
 const (
 	uid uint = 1
 
@@ -8,10 +13,6 @@ const (
 	host     = "ftp-dev-client"
 	user     = "user01"
 	password = "pwd01"
-
-	// dateFormat = "2006-01-02 15:04"
-	//
-	// lastModificationDateFormat = "Jan 2 15:04"
 )
 
 // Feature messages returned by FEAT command
@@ -37,6 +38,7 @@ const (
  SIZE
  TVFS
  UTF8
+ PRET
 211 End`
 
 	featureMsgWithoutUTF8 = `211-Features:
@@ -68,68 +70,59 @@ const (
 	systemMsg = `UNIX Type: L8`
 )
 
-//const (
-//	extendedPassiveModeMessage = "Entering Extended Passive Mode (|||21103|)."
-//)
-//
-//func getEntriesAsListMessage(t *testing.T) string {
-//	var builder strings.Builder
-//	for _, entry := range getEntries(t) {
-//		builder.WriteString(fmt.Sprintf(
-//			"%s%s %5d %10s %10s %20d %s %s",
-//			entryTypeToStr(t, entry.Type),
-//			entry.Permissions,
-//			entry.NumHardLinks,
-//			entry.OwnerUser,
-//			entry.OwnerGroup,
-//			entry.SizeInBytes,
-//			entry.LastModificationDate.Format(lastModificationDateFormat),
-//			entry.Name,
-//		))
-//	}
-//	return builder.String()
-//}
-//
-//func getEntries(t *testing.T) []*entities.Entry {
-//	return []*entities.Entry{
-//		newEntry(t, "file5", 167, "2022-01-12 16:23"),
-//		newEntry(t, "file3", 40032, "2022-01-24 16:23"),
-//		newEntry(t, "file9", 2, "2022-01-02 11:23"),
-//		newEntry(t, "file2", 102, "2021-05-02 17:23"),
-//		newEntry(t, "file6", 9635, "2022-01-02 13:23"),
-//		newEntry(t, "file7", 4352, "2020-04-02 14:23"),
-//		newEntry(t, "file1", 100, "2022-01-02 15:23"),
-//		newEntry(t, "file8", 1034, "2022-09-02 10:23"),
-//		newEntry(t, "file4", 5043, "2022-01-12 19:23"),
-//	}
-//}
-//
-//func newEntry(t *testing.T, name string, sizeInBytes uint64, dateStr string) *entities.Entry {
-//	date, err := time.Parse(dateFormat, dateStr)
-//	require.NoError(t, err, "Failed to parse test case date")
-//
-//	return &entities.Entry{
-//		Type:                 entities.EntryTypeFile,
-//		Permissions:          "rwxrwxrwx",
-//		Name:                 name,
-//		OwnerUser:            "user01",
-//		OwnerGroup:           "group01",
-//		SizeInBytes:          sizeInBytes,
-//		NumHardLinks:         2,
-//		LastModificationDate: date,
-//	}
-//}
-//
-//func entryTypeToStr(t *testing.T, entryType entities.EntryType) string {
-//	switch entryType {
-//	case entities.EntryTypeFile:
-//		return "f"
-//	case entities.EntryTypeDir:
-//		return "d"
-//	case entities.EntryTypeLink:
-//		return "l"
-//	default:
-//		require.Fail(t, "unknown entry type %d", entryType)
-//	}
-//	return ""
-//}
+const (
+	extendedPassiveModeMessage = "Entering Extended Passive Mode (|||21103|)."
+	passiveModeMessage         = "Entering Passive Mode (10,0,0,1,82,111)"
+	listMessage                = "Here comes the directory listing."
+	entryFileMessage           = "-rw-r--r--    1 ftp      ftp           187 Sep 16 14:34 file-1.txt"
+)
+
+func setMocksForLogin(connMock *mocks.TextConnection, useTLS bool) {
+	connMock.
+		On("Cmd", ftpconnection.CommandUser, user).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("ReadResponse", ftpconnection.StatusNoCheck).
+		Return(ftpconnection.StatusLoggedIn, "", nil).
+		Once()
+	connMock.
+		On("Cmd", ftpconnection.CommandFeat).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("ReadResponse", ftpconnection.StatusNoCheck).
+		Return(ftpconnection.StatusSystem, featureMsgWithoutMLST, nil).
+		Once()
+	connMock.
+		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("ReadResponse", ftpconnection.StatusCommandOK).
+		Return(ftpconnection.StatusCommandOK, "", nil).
+		Once()
+	connMock.
+		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("ReadResponse", ftpconnection.StatusNoCheck).
+		Return(ftpconnection.StatusCommandOK, "", nil).
+		Once()
+
+	if useTLS {
+		connMock.
+			On("Cmd", ftpconnection.CommandProtectionBufferSize).
+			Return(uid, nil).
+			Once()
+		connMock.
+			On("Cmd", ftpconnection.CommandProtocol).
+			Return(uid, nil).
+			Once()
+		connMock.
+			On("ReadResponse", ftpconnection.StatusCommandOK).
+			Return(ftpconnection.StatusCommandOK, "", nil).
+			Twice()
+	}
+}

@@ -127,7 +127,7 @@ func Test_UploadFile_Execute_DirNotFoundError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, fmt.Sprintf("not found error: directory %s not found", remoteDirPath))
 	assert.IsType(t, ftperrors.NotFoundErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }
 
 func Test_UploadFile_Execute_CdError(t *testing.T) {
@@ -160,7 +160,7 @@ func Test_UploadFile_Execute_CdError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, "an internal error occurred: failed to change directory")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }
 
 func Test_UploadFile_Execute_UploadError(t *testing.T) {
@@ -203,7 +203,7 @@ func Test_UploadFile_Execute_UploadError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, "an internal error occurred: failed to upload file")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }
 
 func Test_UploadFile_Execute_SizeError(t *testing.T) {
@@ -250,7 +250,7 @@ func Test_UploadFile_Execute_SizeError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, "an internal error occurred: failed to check file size")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }
 
 func Test_UploadFile_Execute_SizeMismatchError(t *testing.T) {
@@ -302,5 +302,5 @@ func Test_UploadFile_Execute_SizeMismatchError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	require.EqualError(t, err, fmt.Sprintf("an internal error occurred: %s", msg))
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.Nil(t, errors.Unwrap(err))
+	assert.NoError(t, errors.Unwrap(err))
 }

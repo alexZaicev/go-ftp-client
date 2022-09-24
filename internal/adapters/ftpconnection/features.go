@@ -20,7 +20,7 @@ type serverFeatures struct {
 
 func newServerFeatures(featureMap map[string]string) *serverFeatures {
 	sf := &serverFeatures{}
-
+	// FIXME: add support for MLST
 	// if _, ok := featureMap[FeatureMLST]; ok && !c.dialOptions.disableMLST {
 	//	c.features.supportMLST = true
 	// }
