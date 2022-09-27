@@ -49,7 +49,7 @@ func NewGfcCommand() (*cobra.Command, error) {
 	return rootCMD, nil
 }
 
-func GetLogLevel(verbose bool) string {
+func getLogLevel(verbose bool) string {
 	if verbose {
 		return "debug"
 	}

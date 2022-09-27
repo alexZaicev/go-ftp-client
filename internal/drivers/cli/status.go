@@ -15,10 +15,31 @@ import (
 )
 
 func AddStatusCommand(rootCMD *cobra.Command) error {
+	// nolint:dupl // single use case command are very similar
 	statusCMD := &cobra.Command{
 		Use:   "status",
 		Short: "Returns information on the server status, including the status of the current connection.",
-		RunE:  doStatus,
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			ctx := context.Background()
+
+			input, err := parseStatusFlags(cmd.Flags(), args)
+			if err != nil {
+				return err
+			}
+
+			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			if err != nil {
+				return errors.NewInternalError("failed to setup logger", err)
+			}
+
+			dependencies := &status.Dependencies{
+				Connector: ftpclient.NewConnector(),
+				UseCase:   &ftp.Status{},
+			}
+
+			err = status.PerformStatus(ctx, logger, dependencies, input)
+			return
+		},
 	}
 
 	statusCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
@@ -64,28 +85,4 @@ func parseStatusFlags(flagSet *pflag.FlagSet, _ []string) (*status.CmdStatusInpu
 		Timeout:   defaultConnectionTimeout,
 		OutWriter: os.Stdout,
 	}, nil
-}
-
-func doStatus(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	input, err := parseStatusFlags(cmd.Flags(), args)
-	if err != nil {
-		return err
-	}
-
-	logger, err := logging.NewZapJSONLogger(GetLogLevel(input.Verbose))
-	if err != nil {
-		return errors.NewInternalError("failed to setup logger", err)
-	}
-
-	dependencies := &status.Dependencies{
-		Connector: ftpclient.NewConnector(),
-		UseCase:   &ftp.Status{},
-	}
-
-	if err := status.PerformStatus(ctx, logger, dependencies, input); err != nil {
-		return err
-	}
-	return nil
 }

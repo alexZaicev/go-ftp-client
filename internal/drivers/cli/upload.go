@@ -19,7 +19,31 @@ func AddUploadCommand(rootCMD *cobra.Command) error {
 	uploadCMD := &cobra.Command{
 		Use:   "upload",
 		Short: "Upload file(s) to the server",
-		RunE:  doUpload,
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			ctx := context.Background()
+
+			input, err := parseUploadFlags(cmd.Flags(), args)
+			if err != nil {
+				return err
+			}
+
+			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			if err != nil {
+				return errors.NewInternalError("failed to setup logger", err)
+			}
+
+			filesystem := os.DirFS("/")
+
+			dependencies := &upload.Dependencies{
+				MkdirUseCase:  &ftp.Mkdir{},
+				UploadUseCase: &ftp.UploadFile{},
+				Connector:     ftpclient.NewConnector(),
+				Filesystem:    filesystem,
+			}
+
+			err = upload.PerformUploadFile(ctx, logger, dependencies, input)
+			return
+		},
 	}
 
 	uploadCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
@@ -96,33 +120,4 @@ func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadI
 		Recursive:      recursive,
 		RemoteFilePath: args[0],
 	}, nil
-}
-
-func doUpload(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	input, err := parseUploadFlags(cmd.Flags(), args)
-	if err != nil {
-		return err
-	}
-
-	logger, err := logging.NewZapJSONLogger(GetLogLevel(input.Verbose))
-	if err != nil {
-		return errors.NewInternalError("failed to setup logger", err)
-	}
-
-	filesystem := os.DirFS("/")
-
-	dependencies := &upload.Dependencies{
-		MkdirUseCase:  &ftp.Mkdir{},
-		UploadUseCase: &ftp.UploadFile{},
-		Connector:     ftpclient.NewConnector(),
-		Filesystem:    filesystem,
-	}
-
-	if err := upload.PerformUploadFile(ctx, logger, dependencies, input); err != nil {
-		return err
-	}
-
-	return nil
 }

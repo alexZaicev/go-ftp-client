@@ -65,7 +65,7 @@ func FormatSizeInBytes(bytes uint64) string {
 	}
 
 	for _, postfix := range []SizePostfix{TB, GB, MB, KB} {
-		bits, _ := postfixMap[postfix]
+		bits := postfixMap[postfix]
 		converted := float64(bytes) / float64(bits)
 		if converted < 1 {
 			continue

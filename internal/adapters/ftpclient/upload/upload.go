@@ -98,6 +98,7 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 			}
 		}
 
+		// FIXME: add ability to write to progress bar writer, so that logs would be visible during the upload
 		p := mpb.New(mpb.WithWidth(progressBarWidth))
 		bar := p.New(
 			ftu.sizeInBytes,
