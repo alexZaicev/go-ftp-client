@@ -60,7 +60,7 @@ type NotFoundError struct {
 func NewNotFoundError(msg string, err error) *NotFoundError {
 	return &NotFoundError{
 		baseError: newBaseError(
-			fmt.Sprintf("not found error: %s", msg),
+			fmt.Sprintf("not found error occurred: %s", msg),
 			err,
 		),
 	}

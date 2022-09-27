@@ -35,6 +35,7 @@ type CmdUploadInput struct {
 }
 
 type Dependencies struct {
+	Connector     ftpclient.Connector
 	Filesystem    fs.FS
 	UploadUseCase ftp.UploadFileUseCase
 	MkdirUseCase  ftp.MkdirUseCase
@@ -53,22 +54,28 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 		return err
 	}
 
-	conn, err := ftpclient.Connect(
+	options := &ftpclient.ConnectorOptions{
+		Address:  input.Address,
+		User:     input.User,
+		Password: input.Password,
+		Verbose:  input.Verbose,
+	}
+	conn, err := deps.Connector.Connect(
 		ctx,
-		input.Address,
-		input.User,
-		input.Password,
-		input.Verbose,
+		options,
 	)
 	if err != nil {
+		logger.WithError(err).Error("failed to connect to server")
 		return err
 	}
 	defer func() {
 		if stopErr := conn.Stop(); stopErr != nil {
+			logger.WithError(stopErr).Error("failed to stop server connection")
 			err = stopErr
 		}
 	}()
 
+	// FIXME: add a record of what directories have been created to avoid unnecessary calls
 	for _, ftu := range filesToUpload {
 		remoteFilePath := filepath.Join(input.RemoteFilePath, ftu.path[len(input.FilePath):])
 
@@ -77,17 +84,18 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 			dirPath = dirPath[:len(dirPath)-1]
 		}
 
-		mkdirUseCaseInput := &ftp.MkdirInput{
-			Path: dirPath,
-		}
+		if dirPath != "" {
+			mkdirUseCaseInput := &ftp.MkdirInput{
+				Path: dirPath,
+			}
+			mkdirUseCaseRepos := &ftp.MkdirRepos{
+				Logger:     logger,
+				Connection: conn,
+			}
 
-		mkdirUseCaseRepos := &ftp.MkdirRepos{
-			Logger:     logger,
-			Connection: conn,
-		}
-
-		if mkdirErr := deps.MkdirUseCase.Execute(ctx, mkdirUseCaseRepos, mkdirUseCaseInput); mkdirErr != nil {
-			return mkdirErr
+			if mkdirErr := deps.MkdirUseCase.Execute(ctx, mkdirUseCaseRepos, mkdirUseCaseInput); mkdirErr != nil {
+				return mkdirErr
+			}
 		}
 
 		p := mpb.New(mpb.WithWidth(progressBarWidth))
@@ -190,7 +198,7 @@ func getFilesToUploadRecursively(filesystem fs.FS, path string) ([]*fileToUpload
 		})
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, errors.NewInternalError("failed to walk directory", err)
 	}
 	return filePaths, nil
 }

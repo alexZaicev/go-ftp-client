@@ -17,7 +17,7 @@ func (c *ServerConnection) Upload(ctx context.Context, options *connection.Uploa
 
 	conn, err := c.cmdWithDataConn(ctx, 0, CommandStore, options.Path)
 	if err != nil {
-		return err
+		return ftperrors.NewInternalError("failed to upload file(s)", err)
 	}
 
 	var multiErr *multierror.Error
@@ -37,7 +37,7 @@ func (c *ServerConnection) Upload(ctx context.Context, options *connection.Uploa
 
 	err = multiErr.ErrorOrNil()
 	if err != nil {
-		return ftperrors.NewInternalError("failed to upload file to remote path", err)
+		return ftperrors.NewInternalError("failed to upload file(s)", err)
 	}
 
 	return nil

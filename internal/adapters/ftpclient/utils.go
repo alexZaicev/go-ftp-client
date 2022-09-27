@@ -1,12 +1,8 @@
 package ftpclient
 
 import (
-	"context"
 	"fmt"
-	"os"
 
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
@@ -24,6 +20,16 @@ const (
 	TiB SizeType = 1 << 40
 )
 
+type SizePostfix string
+
+const (
+	B  SizePostfix = "B"
+	KB SizePostfix = "KB"
+	MB SizePostfix = "MB"
+	GB SizePostfix = "GB"
+	TB SizePostfix = "TB"
+)
+
 type CallbackWriter struct {
 	Callback func(bytesRead int64)
 }
@@ -32,39 +38,6 @@ func (cw *CallbackWriter) Write(p []byte) (n int, err error) {
 	n, err = len(p), nil
 	cw.Callback(int64(n))
 	return
-}
-
-func Connect(
-	ctx context.Context,
-	address string,
-	user string,
-	password string,
-	verbose bool,
-) (conn connection.Connection, err error) {
-	options := make([]ftpconnection.Option, 0)
-	if verbose {
-		options = append(options, ftpconnection.WithVerboseWriter(os.Stdout))
-	}
-
-	conn, err = ftpconnection.DialContext(
-		ctx,
-		address,
-		options...,
-	)
-	if err != nil {
-		return nil, errors.NewInternalError("failed to establish connection", err)
-	}
-
-	if loginErr := conn.Login(user, password); loginErr != nil {
-		defer func() {
-			if stopErr := conn.Stop(); stopErr != nil {
-				err = stopErr
-			}
-		}()
-		return nil, errors.NewInternalError("failed to authenticate with provided user account", loginErr)
-	}
-
-	return conn, nil
 }
 
 func EntryTypeToStr(entryType entities.EntryType) (string, error) {
@@ -84,19 +57,20 @@ func EntryTypeToStr(entryType entities.EntryType) (string, error) {
 }
 
 func FormatSizeInBytes(bytes uint64) string {
-	postfixSizeMap := map[string]SizeType{
-		"KB": KiB,
-		"MB": MiB,
-		"GB": GiB,
-		"TB": TiB,
+	postfixMap := map[SizePostfix]SizeType{
+		TB: TiB,
+		GB: GiB,
+		MB: MiB,
+		KB: KiB,
 	}
 
-	for k, v := range postfixSizeMap {
-		converted := float64(bytes) / float64(v)
+	for _, postfix := range []SizePostfix{TB, GB, MB, KB} {
+		bits, _ := postfixMap[postfix]
+		converted := float64(bytes) / float64(bits)
 		if converted < 1 {
 			continue
 		}
-		return fmt.Sprintf("%.2f %s", converted, k)
+		return fmt.Sprintf("%.2f %s", converted, postfix)
 	}
-	return fmt.Sprintf("%d B", bytes)
+	return fmt.Sprintf("%d %s", bytes, B)
 }

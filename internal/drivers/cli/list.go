@@ -2,10 +2,12 @@ package cli
 
 import (
 	"context"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/list"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
@@ -78,14 +80,15 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 	}
 
 	return &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		ShowAll:  showAll,
-		Path:     args[0],
-		SortType: models.SortType(sortTypeStr),
+		Address:   address,
+		User:      user,
+		Password:  pwd,
+		Verbose:   verbose,
+		Timeout:   defaultConnectionTimeout,
+		OutWriter: os.Stdout,
+		ShowAll:   showAll,
+		Path:      args[0],
+		SortType:  models.SortType(sortTypeStr),
 	}, nil
 }
 
@@ -103,7 +106,8 @@ func doList(cmd *cobra.Command, args []string) error {
 	}
 
 	dependencies := &list.Dependencies{
-		UseCase: &ftp.ListFiles{},
+		Connector: ftpclient.NewConnector(),
+		UseCase:   &ftp.ListFiles{},
 	}
 
 	if err := list.PerformListFiles(ctx, logger, dependencies, input); err != nil {

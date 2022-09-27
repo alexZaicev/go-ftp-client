@@ -50,7 +50,7 @@ func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
 	require.NoError(t, err)
 
 	err = serverConn.Cd(remotePath)
-	require.EqualError(t, err, fmt.Sprintf("not found error: path %s does not exist", remotePath))
+	require.EqualError(t, err, fmt.Sprintf("not found error occurred: path %s does not exist", remotePath))
 	assert.IsType(t, ftperrors.NotFoundErrorType, err)
 	assert.NoError(t, errors.Unwrap(err))
 }

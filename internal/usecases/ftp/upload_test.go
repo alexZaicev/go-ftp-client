@@ -105,7 +105,7 @@ func Test_UploadFile_Execute_DirNotFoundError(t *testing.T) {
 	logger := assertlogging.NewLogger(t)
 	logger.
 		ExpectError(fmt.Sprintf("directory %s not found", remoteDirPath)).
-		WithError(assertlogging.EqualError(fmt.Sprintf("not found error: directory %s not found", remoteDirPath)))
+		WithError(assertlogging.EqualError(fmt.Sprintf("not found error occurred: directory %s not found", remoteDirPath)))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
@@ -125,7 +125,7 @@ func Test_UploadFile_Execute_DirNotFoundError(t *testing.T) {
 
 	useCase := &ftp.UploadFile{}
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
-	require.EqualError(t, err, fmt.Sprintf("not found error: directory %s not found", remoteDirPath))
+	require.EqualError(t, err, fmt.Sprintf("not found error occurred: directory %s not found", remoteDirPath))
 	assert.IsType(t, ftperrors.NotFoundErrorType, err)
 	assert.NoError(t, errors.Unwrap(err))
 }

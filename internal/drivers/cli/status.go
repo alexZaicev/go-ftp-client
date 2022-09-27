@@ -2,10 +2,12 @@ package cli
 
 import (
 	"context"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/status"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
@@ -55,11 +57,12 @@ func parseStatusFlags(flagSet *pflag.FlagSet, _ []string) (*status.CmdStatusInpu
 	}
 
 	return &status.CmdStatusInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
+		Address:   address,
+		User:      user,
+		Password:  pwd,
+		Verbose:   verbose,
+		Timeout:   defaultConnectionTimeout,
+		OutWriter: os.Stdout,
 	}, nil
 }
 
@@ -77,7 +80,8 @@ func doStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	dependencies := &status.Dependencies{
-		UseCase: &ftp.Status{},
+		Connector: ftpclient.NewConnector(),
+		UseCase:   &ftp.Status{},
 	}
 
 	if err := status.PerformStatus(ctx, logger, dependencies, input); err != nil {

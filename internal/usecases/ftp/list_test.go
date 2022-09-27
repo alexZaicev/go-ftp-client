@@ -188,7 +188,7 @@ func Test_ListFiles_Execute_NotFoundError(t *testing.T) {
 	useCase := &ftp.ListFiles{}
 	entries, err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 	assert.Nil(t, entries)
-	require.EqualError(t, err, fmt.Sprintf("not found error: no entries found under %s path", dirPath))
+	require.EqualError(t, err, fmt.Sprintf("not found error occurred: no entries found under %s path", dirPath))
 	assert.IsType(t, ftperrors.NotFoundErrorType, err)
 	assert.NoError(t, errors.Unwrap(err))
 }

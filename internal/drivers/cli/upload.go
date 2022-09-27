@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/upload"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
@@ -115,6 +116,7 @@ func doUpload(cmd *cobra.Command, args []string) error {
 	dependencies := &upload.Dependencies{
 		MkdirUseCase:  &ftp.Mkdir{},
 		UploadUseCase: &ftp.UploadFile{},
+		Connector:     ftpclient.NewConnector(),
 		Filesystem:    filesystem,
 	}
 
