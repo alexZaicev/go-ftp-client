@@ -9,7 +9,8 @@ import (
 
 const (
 	decimalBase = 10
-	bitSize     = 64
+	bitSize64   = 64
+	bitSize32   = 32
 )
 
 type Parser interface {
