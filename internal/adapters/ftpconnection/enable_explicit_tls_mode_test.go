@@ -16,8 +16,14 @@ func Test_ServerConnection_EnableExplicitTLSMode_Success(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
-	connMock.On("Cmd", ftpconnection.CommandAuthTLS).Return(uid, nil)
-	connMock.On("ReadResponse", ftpconnection.StatusAuthOK).Return(0, "", nil)
+	connMock.
+		On("Cmd", ftpconnection.CommandAuthTLS).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("ReadResponse", ftpconnection.StatusAuthOK).
+		Return(0, "", nil).
+		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)

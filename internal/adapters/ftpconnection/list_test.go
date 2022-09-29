@@ -969,7 +969,7 @@ func Test_ServerConnection_List_ParserError(t *testing.T) {
 	assert.Nil(t, entries)
 	require.EqualError(t, err, "an internal error occurred: failed to list files")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.EqualError(t, errors.Unwrap(err), "1 error occurred:\n\t* an internal error occurred: unsupported list format\n\n")
+	assert.EqualError(t, errors.Unwrap(err), "1 error occurred:\n\t* an internal error occurred: unsupported entry format\n\n")
 }
 
 func Test_ServerConnection_List_ScannerError(t *testing.T) {

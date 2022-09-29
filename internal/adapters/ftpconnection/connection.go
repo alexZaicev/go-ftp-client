@@ -97,6 +97,7 @@ type ServerConnection struct {
 	verboseWriter io.Writer
 	tlsConfig     *tls.Config
 	shutTimeout   time.Duration
+	location      *time.Location
 }
 
 func NewConnection(
@@ -121,6 +122,7 @@ func NewConnection(
 
 	sc := &ServerConnection{
 		host:        host,
+		location:    time.UTC,
 		dialer:      dialer,
 		tcpConn:     conn,
 		conn:        textConn,

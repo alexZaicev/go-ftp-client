@@ -16,7 +16,10 @@ func Test_ServerConnection_Ready_Success(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
-	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", nil)
+	connMock.
+		On("ReadResponse", ftpconnection.StatusReady).
+		Return(0, "", nil).
+		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
@@ -29,9 +32,18 @@ func Test_ServerConnection_Ready_ReadResponseError(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
-	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", errors.New("mock error"))
-	connMock.On("Cmd", ftpconnection.CommandQuit).Return(uid, nil)
-	connMock.On("Close").Return(nil)
+	connMock.
+		On("ReadResponse", ftpconnection.StatusReady).
+		Return(0, "", errors.New("mock error")).
+		Once()
+	connMock.
+		On("Cmd", ftpconnection.CommandQuit).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("Close").
+		Return(nil).
+		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)
@@ -46,9 +58,18 @@ func Test_ServerConnection_Ready_StopError(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
-	connMock.On("ReadResponse", ftpconnection.StatusReady).Return(0, "", errors.New("mock error"))
-	connMock.On("Cmd", ftpconnection.CommandQuit).Return(uid, nil)
-	connMock.On("Close").Return(errors.New("mock error"))
+	connMock.
+		On("ReadResponse", ftpconnection.StatusReady).
+		Return(0, "", errors.New("mock error")).
+		Once()
+	connMock.
+		On("Cmd", ftpconnection.CommandQuit).
+		Return(uid, nil).
+		Once()
+	connMock.
+		On("Close").
+		Return(errors.New("mock error")).
+		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
 	require.NoError(t, err)

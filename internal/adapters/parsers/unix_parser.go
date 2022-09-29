@@ -12,19 +12,12 @@ import (
 
 const (
 	lastModificationDateFormat = "Jan 2 15:04"
-	decimalBase                = 10
-	bitSize                    = 64
 )
 
 type unixListParser struct {
 }
 
-func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
-	data = strings.TrimSpace(data)
-	if data == "" {
-		return nil, errors.NewInvalidArgumentError("data", errors.ErrMsgCannotBeBlank)
-	}
-
+func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, error) {
 	entry := &entities.Entry{}
 	var token string
 
@@ -72,7 +65,7 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 	entry.LastModificationDate = lastModificationDate
 
 	// name
-	_, entry.Name = p.nextToken(data)
+	entry.Name = strings.TrimSpace(data)
 
 	return entry, nil
 }
@@ -83,12 +76,9 @@ func (p *unixListParser) nextToken(data string) (newData, token string) {
 
 	var startFound bool
 	for idx, ch := range data {
-		if ch == ' ' {
-			if startFound {
-				end = idx
-				break
-			}
-			continue
+		if ch == ' ' && startFound {
+			end = idx
+			break
 		}
 
 		if startFound && idx == len(data)-1 {

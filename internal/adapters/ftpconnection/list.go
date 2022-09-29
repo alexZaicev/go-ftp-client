@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/parsers"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
@@ -33,7 +34,9 @@ func (c *ServerConnection) List(ctx context.Context, options *connection.ListOpt
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		entryStr := scanner.Text()
-		entry, parseErr := c.parser.Parse(entryStr)
+		entry, parseErr := c.parser.Parse(entryStr, &parsers.Options{
+			Location: c.location,
+		})
 		if parseErr != nil {
 			multiErr = multierror.Append(multiErr, parseErr)
 			break
