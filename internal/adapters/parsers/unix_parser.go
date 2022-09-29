@@ -17,12 +17,7 @@ const (
 type unixListParser struct {
 }
 
-func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
-	data = strings.TrimSpace(data)
-	if data == "" {
-		return nil, errors.NewInvalidArgumentError("data", errors.ErrMsgCannotBeBlank)
-	}
-
+func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, error) {
 	entry := &entities.Entry{}
 	var token string
 
@@ -37,7 +32,7 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 
 	// hard links
 	data, token = p.nextToken(data)
-	numLinks, err := strconv.ParseInt(token, 10, 32)
+	numLinks, err := strconv.ParseInt(token, decimalBase, bitSize)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse number of hard links", err)
 	}
@@ -49,14 +44,15 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 
 	// size in bytes
 	data, token = p.nextToken(data)
-	sizeInBytes, err := strconv.ParseUint(token, 10, 64)
+	sizeInBytes, err := strconv.ParseUint(token, decimalBase, bitSize)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse size in bytes", err)
 	}
 	entry.SizeInBytes = sizeInBytes
 
 	// last modification date
-	dateTokens := make([]string, 0, 3)
+	const tokenSize = 3
+	dateTokens := make([]string, 0, tokenSize)
 	for idx := 0; idx < 3; idx++ {
 		data, token = p.nextToken(data)
 		dateTokens = append(dateTokens, token)
@@ -69,7 +65,7 @@ func (p *unixListParser) Parse(data string) (*entities.Entry, error) {
 	entry.LastModificationDate = lastModificationDate
 
 	// name
-	data, entry.Name = p.nextToken(data)
+	entry.Name = strings.TrimSpace(data)
 
 	return entry, nil
 }
@@ -80,12 +76,9 @@ func (p *unixListParser) nextToken(data string) (newData, token string) {
 
 	var startFound bool
 	for idx, ch := range data {
-		if ch == ' ' {
-			if startFound {
-				end = idx
-				break
-			}
-			continue
+		if ch == ' ' && startFound {
+			end = idx
+			break
 		}
 
 		if startFound && idx == len(data)-1 {

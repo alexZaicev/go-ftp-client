@@ -24,7 +24,7 @@ type StatusRepos struct {
 type Status struct {
 }
 
-func (u *Status) Execute(ctx context.Context, repos *StatusRepos, _ *StatusInput) (*entities.Status, error) {
+func (u *Status) Execute(_ context.Context, repos *StatusRepos, _ *StatusInput) (*entities.Status, error) {
 	status, err := repos.Connection.Status()
 	if err != nil {
 		repos.Logger.WithError(err).Error("failed to get server status")

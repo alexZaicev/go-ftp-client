@@ -2,10 +2,12 @@ package cli
 
 import (
 	"context"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/list"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
@@ -14,10 +16,31 @@ import (
 )
 
 func AddListCommand(rootCMD *cobra.Command) error {
+	// nolint:dupl // single use case command are very similar
 	listCMD := &cobra.Command{
 		Use:   "ls",
 		Short: "List files in directory.",
-		RunE:  doList,
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			ctx := context.Background()
+
+			input, err := parseListFlags(cmd.Flags(), args)
+			if err != nil {
+				return err
+			}
+
+			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			if err != nil {
+				return errors.NewInternalError("failed to setup logger", err)
+			}
+
+			dependencies := &list.Dependencies{
+				Connector: ftpclient.NewConnector(),
+				UseCase:   &ftp.ListFiles{},
+			}
+
+			err = list.PerformListFiles(ctx, logger, dependencies, input)
+			return
+		},
 	}
 
 	listCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
@@ -78,37 +101,14 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 	}
 
 	return &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		ShowAll:  showAll,
-		Path:     args[0],
-		SortType: models.SortType(sortTypeStr),
+		Address:   address,
+		User:      user,
+		Password:  pwd,
+		Verbose:   verbose,
+		Timeout:   defaultConnectionTimeout,
+		OutWriter: os.Stdout,
+		ShowAll:   showAll,
+		Path:      args[0],
+		SortType:  models.SortType(sortTypeStr),
 	}, nil
-}
-
-func doList(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	input, err := parseListFlags(cmd.Flags(), args)
-	if err != nil {
-		return err
-	}
-
-	logger, err := logging.NewZapJSONLogger(GetLogLevel(input.Verbose))
-	if err != nil {
-		return errors.NewInternalError("failed to setup logger", err)
-	}
-
-	dependencies := &list.Dependencies{
-		UseCase: &ftp.ListFiles{},
-	}
-
-	if err = list.PerformListFiles(ctx, logger, dependencies, input); err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -9,20 +9,18 @@ import (
 )
 
 const (
-	ArgAddress            = "address"
-	ArgAddressShort       = "a"
-	ArgUser               = "user"
-	ArgUserShort          = "u"
-	ArgPassword           = "password"
-	ArgPasswordShort      = "p"
-	ArgFile               = "file"
-	ArgFileShort          = "f"
-	ArgCreateParents      = "create-parents"
-	ArgCreateParentsShort = "c"
-	ArgVerbose            = "verbose"
-	ArgVerboseShort       = "v"
-	ArgRecursive          = "recursive"
-	ArgRecursiveShort     = "r"
+	ArgAddress        = "address"
+	ArgAddressShort   = "a"
+	ArgUser           = "user"
+	ArgUserShort      = "u"
+	ArgPassword       = "password"
+	ArgPasswordShort  = "p"
+	ArgFile           = "file"
+	ArgFileShort      = "f"
+	ArgVerbose        = "verbose"
+	ArgVerboseShort   = "v"
+	ArgRecursive      = "recursive"
+	ArgRecursiveShort = "r"
 
 	ArgAll  = "all"
 	ArgSort = "sort"
@@ -51,7 +49,7 @@ func NewGfcCommand() (*cobra.Command, error) {
 	return rootCMD, nil
 }
 
-func GetLogLevel(verbose bool) string {
+func getLogLevel(verbose bool) string {
 	if verbose {
 		return "debug"
 	}

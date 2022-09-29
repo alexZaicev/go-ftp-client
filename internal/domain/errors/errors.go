@@ -7,6 +7,13 @@ const (
 	ErrMsgCannotBeBlank = "cannot be blank"
 )
 
+var (
+	InternalErrorType        = &InternalError{}
+	InvalidArgumentErrorType = &InvalidArgumentError{}
+	UnknownErrorType         = &UnknownError{}
+	NotFoundErrorType        = &NotFoundError{}
+)
+
 type InternalError struct {
 	baseError
 }
@@ -27,7 +34,7 @@ type InvalidArgumentError struct {
 func NewInvalidArgumentError(arg, msg string) *InvalidArgumentError {
 	return &InvalidArgumentError{
 		baseError: newBaseError(
-			fmt.Sprintf("an invalid argument error: argument %s %s", arg, msg),
+			fmt.Sprintf("an invalid argument error occurred: argument %s %s", arg, msg),
 			nil,
 		),
 	}
@@ -40,7 +47,7 @@ type UnknownError struct {
 func NewUnknownError(msg string, err error) *UnknownError {
 	return &UnknownError{
 		baseError: newBaseError(
-			fmt.Sprintf("an unknown error occured: %s", msg),
+			fmt.Sprintf("an unknown error occurred: %s", msg),
 			err,
 		),
 	}
@@ -53,7 +60,7 @@ type NotFoundError struct {
 func NewNotFoundError(msg string, err error) *NotFoundError {
 	return &NotFoundError{
 		baseError: newBaseError(
-			fmt.Sprintf("not found error: %s", msg),
+			fmt.Sprintf("not found error occurred: %s", msg),
 			err,
 		),
 	}

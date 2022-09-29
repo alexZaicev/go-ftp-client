@@ -1,12 +1,19 @@
 package parsers
 
 import (
+	"strings"
+
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+)
+
+const (
+	decimalBase = 10
+	bitSize     = 64
 )
 
 type Parser interface {
-	Parse(data string) (*entities.Entry, error)
+	Parse(data string, options *Options) (*entities.Entry, error)
 }
 
 type genericListParser struct {
@@ -24,12 +31,19 @@ func NewGenericListParser() Parser {
 	}
 }
 
-func (p *genericListParser) Parse(data string) (*entities.Entry, error) {
+func (p *genericListParser) Parse(data string, options *Options) (*entities.Entry, error) {
+	data = strings.TrimSpace(data)
+	if data == "" {
+		return nil, ftperrors.NewInvalidArgumentError("data", ftperrors.ErrMsgCannotBeBlank)
+	}
+	if options == nil {
+		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
+	}
 	for _, parser := range p.parsers {
-		entry, err := parser.Parse(data)
+		entry, err := parser.Parse(data, options)
 		if entry != nil && err == nil {
 			return entry, nil
 		}
 	}
-	return nil, errors.NewInternalError("unsupported list format", nil)
+	return nil, ftperrors.NewInternalError("unsupported entry format", nil)
 }

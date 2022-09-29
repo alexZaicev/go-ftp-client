@@ -3,103 +3,45 @@ package ftpconnection
 import (
 	"crypto/tls"
 	"io"
-	"net"
-	"time"
+	"net/textproto"
 
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
-const (
-	defaultShutTimeout = 500 * time.Millisecond
-)
+type Option func(conn *ServerConnection) error
 
-// dialOptions holds consumer defined dial-up options
-type dialOptions struct {
-	tlsConfig *tls.Config
-	dialer    *net.Dialer
-	location  *time.Location
-
-	verboseWriter io.Writer
-
-	shutTimeout time.Duration
-
-	// TODO: create option func to set bellow flags
-	explicitTLS bool
-	disableMLST bool
-	writingMDTM bool
-	disableUTF8 bool
-	disableEPSV bool
-}
-
-type DialOption func(options *dialOptions) error
-
-// newDialOptions create a dialOptions struct with default configurations
-func newDialOptions() *dialOptions {
-	return &dialOptions{
-		location:    time.UTC,
-		dialer:      &net.Dialer{},
-		shutTimeout: defaultShutTimeout,
-	}
-}
-
-func (do *dialOptions) wrapConnection(conn net.Conn) io.ReadWriteCloser {
-	if do.verboseWriter == nil {
-		return conn
-	}
-	return newVerboseConnectionWrapper(conn, do.verboseWriter)
-}
-
-func WithTimeout(timeout time.Duration) DialOption {
-	return func(options *dialOptions) error {
-		options.dialer.Timeout = timeout
-		return nil
-	}
-}
-
-func WithTLSConfig(tlsConfig *tls.Config) DialOption {
-	return func(options *dialOptions) error {
+func WithTLSConfig(tlsConfig *tls.Config) Option {
+	return func(conn *ServerConnection) error {
 		if tlsConfig == nil {
 			return errors.NewInvalidArgumentError("tlsConfig", errors.ErrMsgCannotBeNil)
 		}
-		options.tlsConfig = tlsConfig
+		conn.tlsConfig = tlsConfig
 		return nil
 	}
 }
 
-func WithExplicitTLSConfig(tlsConfig *tls.Config) DialOption {
-	return func(options *dialOptions) error {
-		if tlsConfig == nil {
-			return errors.NewInvalidArgumentError("tlsConfig", errors.ErrMsgCannotBeNil)
+func WithVerboseWriter(writer io.Writer) Option {
+	return func(conn *ServerConnection) error {
+		if writer == nil {
+			return errors.NewInvalidArgumentError("writer", errors.ErrMsgCannotBeNil)
 		}
-		options.tlsConfig = tlsConfig
-		options.explicitTLS = true
+		conn.verboseWriter = writer
+		// wrap existing connection
+		conn.conn = textproto.NewConn(conn.wrapConnection(conn.tcpConn))
 		return nil
 	}
 }
 
-func WithLocation(location *time.Location) DialOption {
-	return func(options *dialOptions) error {
-		if location == nil {
-			return errors.NewInvalidArgumentError("location", errors.ErrMsgCannotBeNil)
-		}
-		options.location = location
+func WithDisabledUTF8() Option {
+	return func(conn *ServerConnection) error {
+		conn.disableUTF8 = true
 		return nil
 	}
 }
 
-func WithDialer(dialer *net.Dialer) DialOption {
-	return func(options *dialOptions) error {
-		if dialer == nil {
-			return errors.NewInvalidArgumentError("dialer", errors.ErrMsgCannotBeNil)
-		}
-		options.dialer = dialer
-		return nil
-	}
-}
-
-func WithVerboseWriter(verboseWriter io.Writer) DialOption {
-	return func(options *dialOptions) error {
-		options.verboseWriter = verboseWriter
+func WithDisabledEPSV() Option {
+	return func(conn *ServerConnection) error {
+		conn.disableEPSV = true
 		return nil
 	}
 }
