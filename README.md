@@ -3,7 +3,7 @@
 [![Units Tests](https://github.com/alexZaicev/go-ftp-client/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/alexZaicev/go-ftp-client/actions/workflows/unit-tests.yaml)
 [![golint](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml/badge.svg)](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml)
 [![Coverage Status](https://coveralls.io/repos/github/alexZaicev/go-ftp-client/badge.svg)](https://coveralls.io/github/alexZaicev/go-ftp-client)
-[![License][license-img]][license]
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A simple CLI utility for executing FTP client without then need of installing additional software.
 
