@@ -32,7 +32,7 @@ func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, 
 
 	// hard links
 	data, token = p.nextToken(data)
-	numLinks, err := strconv.ParseInt(token, decimalBase, bitSize)
+	numLinks, err := strconv.ParseInt(token, decimalBase, bitSize32)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse number of hard links", err)
 	}
@@ -44,7 +44,7 @@ func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, 
 
 	// size in bytes
 	data, token = p.nextToken(data)
-	sizeInBytes, err := strconv.ParseUint(token, decimalBase, bitSize)
+	sizeInBytes, err := strconv.ParseUint(token, decimalBase, bitSize64)
 	if err != nil {
 		return nil, errors.NewInternalError("failed to parse size in bytes", err)
 	}

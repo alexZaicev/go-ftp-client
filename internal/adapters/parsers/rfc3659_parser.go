@@ -76,7 +76,7 @@ func (p *rfc3659ListParser) Parse(data string, options *Options) (entry *entitie
 			}
 			entry.Type = entryType
 		case MetadataSize:
-			sizeInByte, convertErr := strconv.ParseUint(mdValue, decimalBase, bitSize)
+			sizeInByte, convertErr := strconv.ParseUint(mdValue, decimalBase, bitSize64)
 			if convertErr != nil {
 				return nil, ftperrors.NewInternalError("failed to parse size in bytes", convertErr)
 			}
