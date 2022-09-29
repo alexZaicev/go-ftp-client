@@ -17,4 +17,4 @@
 dist/
 
 # Unit test report
-unit_test_coverage.html
+coverage.html

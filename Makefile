@@ -26,12 +26,12 @@ build: vendor
 unit: vendor
 	go test $(INTERNAL_DIR)/... $(CMD_DIR)/... \
   		-cover \
-    	-coverprofile=c.out \
+    	-coverprofile=coverage.out \
     	-count=1
-	@cat c.out | \
+	@cat coverage.out | \
 		awk 'BEGIN {cov=0; stat=0;} $$3!="" { cov+=($$3==1?$$2:0); stat+=$$2; } \
     	END {printf("Total coverage: %.2f%% of statements\n", (cov/stat)*100);}'
-	go tool cover -html=c.out -o unit_test_coverage.html
+	go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: fmt
 fmt: vendor
