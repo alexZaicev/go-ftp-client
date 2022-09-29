@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3.0.2
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@v0.7.1
+        uses: aquasecurity/trivy-action@0.7.1
         with:
             scan-type: 'fs'
             ignore-unfixed: true
