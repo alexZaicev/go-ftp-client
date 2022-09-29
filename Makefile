@@ -58,3 +58,8 @@ mocks: $(INTERNAL_NON_TEST_GO_FILES)
 	fi
 	rm -rf $(MOCKS_DIR)/
 	mv $(MOCKS_DIR)_maketemp $(MOCKS_DIR)
+
+.PHONY: trivy
+trivy:
+	trivy fs --exit-code 0 --severity UNKNOWN,LOW,MEDIUM --no-progress --skip-dirs tests .
+	trivy fs --exit-code 1 --severity HIGH,CRITICAL --no-progress --skip-dirs tests .
