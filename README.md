@@ -1,6 +1,6 @@
 # GO FTP Client
 
-![golangci-lint](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml/badge.svg)](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml/badge.svg)
+[![golint](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml/badge.svg)](https://github.com/alexZaicev/go-ftp-client/actions/workflows/golint.yaml)
 
 A simple CLI utility for executing FTP client without then need of installing additional software.
 
