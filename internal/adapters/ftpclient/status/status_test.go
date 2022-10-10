@@ -71,14 +71,14 @@ func Test_PerformStatus_Success(t *testing.T) {
 	deps := &status.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &status.CmdStatusInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
 	}
 
 	expectedStatusStr := `+--------+--------+----------------+----------------+-------------+
@@ -120,14 +120,14 @@ func Test_PerformStatus_ConnectError(t *testing.T) {
 	deps := &status.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &status.CmdStatusInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
 	}
 
 	err := status.PerformStatus(ctx, logger, deps, input)
@@ -182,14 +182,14 @@ func Test_PerformStatus_ConnectStopError(t *testing.T) {
 	deps := &status.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &status.CmdStatusInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
 	}
 
 	err := status.PerformStatus(ctx, logger, deps, input)
@@ -234,14 +234,14 @@ func Test_PerformStatus_UseCaseError(t *testing.T) {
 	deps := &status.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &status.CmdStatusInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
 	}
 
 	err := status.PerformStatus(ctx, logger, deps, input)

@@ -1,8 +1,10 @@
-CMD_DIR         := "./cmd"
-DIST_DIR        := "./dist"
-INTERNAL_DIR    := "./internal"
-MOCKS_DIR       := "./mocks"
+CMD_DIR              := "./cmd"
+DIST_DIR             := "./dist"
+INTERNAL_DIR         := "./internal"
+MOCKS_DIR            := "./mocks"
+FUNCTIONAL_TESTS_DIR := "./tests"
 
+FUNCTIONAL_TEST_MODULES    = $(shell go list $(FUNCTIONAL_TESTS_DIR)/...)
 INTERNAL_NON_TEST_GO_FILES = $(shell find $(INTERNAL_DIR) -type f -name '*.go' -not -name '*_test.go')
 
 MOCKERY      := mockery
@@ -33,16 +35,20 @@ unit: vendor
     	END {printf("Total coverage: %.2f%% of statements\n", (cov/stat)*100);}'
 	go tool cover -html=coverage.out -o coverage.html
 
+.PHONY: functional
+functional: vendor
+	go test $(FUNCTIONAL_TEST_MODULES) -v -p 1 -count 1
+
 .PHONY: fmt
 fmt: vendor
-	gofmt -s -w -e $(CMD_DIR) $(FUNCTIONAL_TESTS_DIR) $(INTERNAL_DIR) $(CONTRACT_TEST_DIR)
+	gofmt -s -w -e $(CMD_DIR) $(FUNCTIONAL_TESTS_DIR) $(INTERNAL_DIR)
 	gci write \
         -s Standard \
         -s Default \
         -s 'Prefix(github.com)' \
         -s 'Prefix(github.com/alexZaicev/go-ftp-client)' \
-        $(CMD_DIR) $(INTERNAL_DIR)
-	goimports -local github.hpe.com -w $(CMD_DIR) $(INTERNAL_DIR)
+        $(CMD_DIR) $(INTERNAL_DIR) $(FUNCTIONAL_TESTS_DIR)
+	goimports -local github.hpe.com -w $(CMD_DIR) $(INTERNAL_DIR) $(FUNCTIONAL_TESTS_DIR)
 
 .PHONY: golint
 golint:

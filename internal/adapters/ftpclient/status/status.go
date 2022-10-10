@@ -13,17 +13,17 @@ import (
 )
 
 type CmdStatusInput struct {
-	Address   string
-	User      string
-	Password  string
-	Verbose   bool
-	Timeout   time.Duration
-	OutWriter io.Writer
+	Address  string
+	User     string
+	Password string
+	Verbose  bool
+	Timeout  time.Duration
 }
 
 type Dependencies struct {
 	Connector ftpclient.Connector
 	UseCase   useCase.StatusUseCase
+	OutWriter io.Writer
 }
 
 func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdStatusInput) (err error) {
@@ -60,7 +60,7 @@ func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencie
 		return err
 	}
 
-	table := tablewriter.NewWriter(input.OutWriter)
+	table := tablewriter.NewWriter(deps.OutWriter)
 	table.SetHeader([]string{
 		"status",
 		"system",

@@ -76,17 +76,17 @@ func Test_PerformListFiles_Success(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	expectedStatusStr := `+------+-------------+----------------+-------------------+-------------------+----------+
@@ -148,17 +148,17 @@ func Test_PerformListFiles_NotFoundError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
@@ -193,17 +193,17 @@ func Test_PerformListFiles_ConnectionError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
@@ -257,17 +257,17 @@ func Test_PerformListFiles_ConnectionStopError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
@@ -302,17 +302,17 @@ func Test_PerformListFiles_SortTypeConvertError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortType("not-a-valid-sort-type"),
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortType("not-a-valid-sort-type"),
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
@@ -362,17 +362,17 @@ func Test_PerformListFiles_UseCaseError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
@@ -431,17 +431,17 @@ func Test_PerformListFiles_EntryTypeConvertError(t *testing.T) {
 	deps := &list.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
+		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  password,
-		Verbose:   true,
-		Timeout:   timeout,
-		OutWriter: buffer,
-		Path:      path,
-		ShowAll:   true,
-		SortType:  models.SortTypeName,
+		Address:  address,
+		User:     user,
+		Password: password,
+		Verbose:  true,
+		Timeout:  timeout,
+		Path:     path,
+		ShowAll:  true,
+		SortType: models.SortTypeName,
 	}
 
 	err := list.PerformListFiles(ctx, logger, deps, input)
