@@ -20,7 +20,7 @@ jobs:
       - name: Run functional tests
         run: make functional
         env:
-          FTP_ADDR: "ftp-service:21"
+          FTP_ADDR: "localhost:21"
           FTP_USER: ftpuser01
           FTP_PASS: ftpuser01
 
