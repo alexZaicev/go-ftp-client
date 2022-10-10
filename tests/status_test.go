@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -64,21 +65,19 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	assert.Empty(s.T(), errBuffer.String())
 
 	result := outBuffer.String()
+	fmt.Println(result)
 
-	assert.Equal(s.T(), 1, strings.Count(result, "STATUS"))
-	assert.Equal(s.T(), 1, strings.Count(result, "OK"))
-
-	assert.Equal(s.T(), 1, strings.Count(result, "SYSTEM"))
-	assert.Equal(s.T(), 1, strings.Count(result, "UNIX"))
-
-	assert.Equal(s.T(), 1, strings.Count(result, "REMOTE ADDRESS"))
-	assert.Equal(s.T(), 1, strings.Count(result, strings.Split(s.config.Address, ":")[0]))
-
-	assert.Equal(s.T(), 1, strings.Count(result, "LOGGED IN USER"))
-	assert.Equal(s.T(), 1, strings.Count(result, s.config.User))
-
-	assert.Equal(s.T(), 1, strings.Count(result, "TLS ENABLED"))
-	assert.Equal(s.T(), 1, strings.Count(result, "NO"))
+	for _, eh := range []string{
+		"STATUS", "SYSTEM", "REMOTE ADDRESS", "LOGGED IN USER", "TLS ENABLED",
+	} {
+		assert.Equal(
+			s.T(),
+			1,
+			strings.Count(result, eh),
+			"expected header %q not found",
+			eh,
+		)
+	}
 }
 
 // func (s *StatusTestSuite) Test_StatusTest_InvalidAddress() {
