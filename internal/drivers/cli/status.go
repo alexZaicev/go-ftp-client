@@ -2,14 +2,13 @@ package cli
 
 import (
 	"context"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/status"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
@@ -27,14 +26,19 @@ func AddStatusCommand(rootCMD *cobra.Command) error {
 				return err
 			}
 
-			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			logger, err := logging.NewZapJSONLogger(
+				getLogLevel(input.Verbose),
+				cmd.OutOrStdout(),
+				cmd.ErrOrStderr(),
+			)
 			if err != nil {
-				return errors.NewInternalError("failed to setup logger", err)
+				return ftperrors.NewInternalError("failed to setup logger", err)
 			}
 
 			dependencies := &status.Dependencies{
 				Connector: ftpclient.NewConnector(),
 				UseCase:   &ftp.Status{},
+				OutWriter: cmd.OutOrStdout(),
 			}
 
 			err = status.PerformStatus(ctx, logger, dependencies, input)
@@ -78,11 +82,10 @@ func parseStatusFlags(flagSet *pflag.FlagSet, _ []string) (*status.CmdStatusInpu
 	}
 
 	return &status.CmdStatusInput{
-		Address:   address,
-		User:      user,
-		Password:  pwd,
-		Verbose:   verbose,
-		Timeout:   defaultConnectionTimeout,
-		OutWriter: os.Stdout,
+		Address:  address,
+		User:     user,
+		Password: pwd,
+		Verbose:  verbose,
+		Timeout:  defaultConnectionTimeout,
 	}, nil
 }

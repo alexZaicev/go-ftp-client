@@ -2,6 +2,7 @@ package logging
 
 import (
 	"errors"
+	"io"
 	"strings"
 
 	"go.uber.org/zap"
@@ -26,13 +27,34 @@ type ZapJSONLogger struct {
 
 // NewZapJSONLogger creates a zap based logger that implements to Logger repository defined
 // in this package. The logger should be flushed before the application exits.
-func NewZapJSONLogger(logLevel string, hooks ...func(zapcore.Entry) error) (*ZapJSONLogger, error) {
-	zapConfig, err := stdJSONLoggerConfig(logLevel)
-	if err != nil {
+func NewZapJSONLogger(logLevel string, outWriter, errWriter io.Writer) (*ZapJSONLogger, error) {
+	var level zapcore.Level
+	if err := level.UnmarshalText([]byte(logLevel)); err != nil {
 		return nil, err
 	}
 
-	return zapLoggerFromConfig(zapConfig, hooks...)
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
+			TimeKey:        timestampKey,
+			LevelKey:       levelKey,
+			MessageKey:     messageKey,
+			NameKey:        nameKey,
+			StacktraceKey:  stacktraceKey,
+			LineEnding:     "\n",
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.FullCallerEncoder,
+		}),
+		zapcore.AddSync(outWriter),
+		zap.NewAtomicLevelAt(level),
+	)
+
+	logger := zap.New(core, zap.ErrorOutput(zapcore.AddSync(errWriter)))
+
+	return &ZapJSONLogger{
+		logger: logger,
+	}, nil
 }
 
 // Error logs an error level message. Logs at this level implicitly add a stacktrace field.
@@ -40,7 +62,7 @@ func (z *ZapJSONLogger) Error(msg string) {
 	z.logger.Error(msg)
 }
 
-// Warn logs an warning level message.
+// Warn logs a warning level message.
 func (z *ZapJSONLogger) Warn(msg string) {
 	z.logger.Warn(msg)
 }
@@ -94,52 +116,6 @@ func (z *ZapJSONLogger) WithError(err error) Logger {
 // Flush syncs that zap logger.
 func (z *ZapJSONLogger) Flush() error {
 	return z.logger.Sync()
-}
-
-func zapLoggerFromConfig(config zap.Config, hooks ...func(zapcore.Entry) error) (*ZapJSONLogger, error) {
-	logHooks := zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-		return zapcore.RegisterHooks(core, hooks...)
-	})
-
-	logger, err := config.Build(
-		// ignore the logger itself when providing caller
-		zap.AddCallerSkip(1),
-		logHooks,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ZapJSONLogger{
-		logger: logger,
-	}, nil
-}
-
-func stdJSONLoggerConfig(logLevel string) (zap.Config, error) {
-	var level zapcore.Level
-	if err := level.UnmarshalText([]byte(logLevel)); err != nil {
-		return zap.Config{}, err
-	}
-
-	return zap.Config{
-		Level:            zap.NewAtomicLevelAt(level),
-		Development:      false,
-		Encoding:         "console",
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-		EncoderConfig: zapcore.EncoderConfig{
-			TimeKey:        timestampKey,
-			LevelKey:       levelKey,
-			MessageKey:     messageKey,
-			NameKey:        nameKey,
-			StacktraceKey:  stacktraceKey,
-			LineEnding:     "\n",
-			EncodeTime:     zapcore.ISO8601TimeEncoder,
-			EncodeLevel:    zapcore.CapitalLevelEncoder,
-			EncodeDuration: zapcore.StringDurationEncoder,
-			EncodeCaller:   zapcore.FullCallerEncoder,
-		},
-	}, nil
 }
 
 // UnwrapInfoExtractor creates an ErrInfoExtractor function that unwraps an error

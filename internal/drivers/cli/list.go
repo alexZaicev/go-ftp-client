@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -28,7 +27,11 @@ func AddListCommand(rootCMD *cobra.Command) error {
 				return err
 			}
 
-			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			logger, err := logging.NewZapJSONLogger(
+				getLogLevel(input.Verbose),
+				cmd.OutOrStdout(),
+				cmd.ErrOrStderr(),
+			)
 			if err != nil {
 				return errors.NewInternalError("failed to setup logger", err)
 			}
@@ -36,6 +39,7 @@ func AddListCommand(rootCMD *cobra.Command) error {
 			dependencies := &list.Dependencies{
 				Connector: ftpclient.NewConnector(),
 				UseCase:   &ftp.ListFiles{},
+				OutWriter: cmd.OutOrStdout(),
 			}
 
 			err = list.PerformListFiles(ctx, logger, dependencies, input)
@@ -101,14 +105,13 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 	}
 
 	return &list.CmdListInput{
-		Address:   address,
-		User:      user,
-		Password:  pwd,
-		Verbose:   verbose,
-		Timeout:   defaultConnectionTimeout,
-		OutWriter: os.Stdout,
-		ShowAll:   showAll,
-		Path:      args[0],
-		SortType:  models.SortType(sortTypeStr),
+		Address:  address,
+		User:     user,
+		Password: pwd,
+		Verbose:  verbose,
+		Timeout:  defaultConnectionTimeout,
+		ShowAll:  showAll,
+		Path:     args[0],
+		SortType: models.SortType(sortTypeStr),
 	}, nil
 }

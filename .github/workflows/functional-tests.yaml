@@ -1,0 +1,40 @@
+name: Functional Tests
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "master" ]
+
+jobs:
+  runner-job:
+    name: functional-tests
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3.0.2
+      - name: Setup go
+        uses: actions/setup-go@v3.3.0
+        with:
+          go-version: 1.18
+      - name: Run functional tests
+        run: make functional
+        env:
+          FTP_ADDR: "127.0.0.1:20021"
+          FTP_USER: ftpuser01
+          FTP_PASS: ftpuser01
+
+    services:
+      ftp-service:
+        image: fauria/vsftpd:latest
+        ports:
+          - 20020:20
+          - 20021:21
+          - 21100-21110:21100-21110
+        env:
+          FTP_USER: ftpuser01
+          FTP_PASS: ftpuser01
+          PASV_ADDRESS: 127.0.0.1
+          PASV_MIN_PORT: 21100
+          PASV_MAX_PORT: 21110
+

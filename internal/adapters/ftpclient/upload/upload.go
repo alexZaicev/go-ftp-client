@@ -13,6 +13,7 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
+	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
@@ -68,12 +69,12 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 		logger.WithError(err).Error("failed to connect to server")
 		return err
 	}
-	defer func() {
+	defer func(conn connection.Connection) {
 		if stopErr := conn.Stop(); stopErr != nil {
 			logger.WithError(stopErr).Error("failed to stop server connection")
 			err = stopErr
 		}
-	}()
+	}(conn)
 
 	// FIXME: add a record of what directories have been created to avoid unnecessary calls
 	for _, ftu := range filesToUpload {

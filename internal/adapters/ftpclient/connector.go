@@ -43,11 +43,11 @@ func (c *connector) Connect(ctx context.Context, options *ConnectorOptions) (con
 	}
 
 	if loginErr := conn.Login(options.User, options.Password); loginErr != nil {
-		defer func() {
+		defer func(conn connection.Connection) {
 			if stopErr := conn.Stop(); stopErr != nil {
 				err = stopErr
 			}
-		}()
+		}(conn)
 		return nil, errors.NewInternalError("failed to authenticate with provided user account", loginErr)
 	}
 	return conn, nil

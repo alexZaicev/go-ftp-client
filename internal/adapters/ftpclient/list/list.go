@@ -10,6 +10,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
+	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftpErrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
@@ -17,12 +18,11 @@ import (
 )
 
 type CmdListInput struct {
-	Address   string
-	User      string
-	Password  string
-	Verbose   bool
-	Timeout   time.Duration
-	OutWriter io.Writer
+	Address  string
+	User     string
+	Password string
+	Verbose  bool
+	Timeout  time.Duration
 
 	ShowAll  bool
 	Path     string
@@ -32,6 +32,7 @@ type CmdListInput struct {
 type Dependencies struct {
 	Connector ftpclient.Connector
 	UseCase   useCase.ListFilesUseCase
+	OutWriter io.Writer
 }
 
 func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdListInput) (err error) {
@@ -49,12 +50,12 @@ func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependen
 		logger.WithError(err).Error("failed to connect to server")
 		return err
 	}
-	defer func() {
+	defer func(conn connection.Connection) {
 		if stopErr := conn.Stop(); stopErr != nil {
 			logger.WithError(stopErr).Error("failed to stop server connection")
 			err = stopErr
 		}
-	}()
+	}(conn)
 
 	useCaseRepos := &useCase.ListFilesRepos{
 		Logger:     logger,
@@ -83,7 +84,7 @@ func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependen
 		return err
 	}
 
-	table := tablewriter.NewWriter(input.OutWriter)
+	table := tablewriter.NewWriter(deps.OutWriter)
 	table.SetHeader([]string{"type", "permissions", "owners", "name", "last modified", "size"})
 	for _, entry := range entries {
 		entryType, cnvErr := ftpclient.EntryTypeToStr(entry.Type)
