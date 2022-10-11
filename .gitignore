@@ -9,12 +9,12 @@
 *.so
 *.dylib
 
-# Test binary, built with `go tests -c`
+# Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 dist/
 
-# Unit tests report
+# Unit test report
 coverage.html
