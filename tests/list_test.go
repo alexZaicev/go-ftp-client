@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"errors"
+	"github.com/olekukonko/tablewriter"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -40,30 +41,60 @@ func NewListTestSuite(t *testing.T) *ListTestSuite {
 }
 
 func (s *ListTestSuite) Test_ListTest_Happy() {
-	// arrange
-	outBuffer := bytes.NewBufferString("")
-	errBuffer := bytes.NewBufferString("")
+	testCases := []struct {
+		name          string
+		path          string
+		tableRenderFn func(*tablewriter.Table)
+	}{
+		{
+			name:          "No files under path",
+			path:          "/tmp",
+			tableRenderFn: func(table *tablewriter.Table) {},
+		},
+	}
 
-	s.clientCMD.SetOut(outBuffer)
-	s.clientCMD.SetErr(errBuffer)
-	s.clientCMD.SetArgs([]string{
-		"ls",
-		"-a",
-		s.config.Address,
-		"-u",
-		s.config.User,
-		"-p",
-		s.config.Password,
-	})
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			// arrange
+			expectedOutBuffer := bytes.NewBufferString("")
 
-	// act
-	err := s.clientCMD.Execute()
+			table := tablewriter.NewWriter(expectedOutBuffer)
+			table.SetHeader([]string{"type", "permissions", "owners", "name", "last modified", "size"})
 
-	// assert
-	require.NoError(s.T(), err)
-	assert.Empty(s.T(), errBuffer.String())
+			tc.tableRenderFn(table)
 
-	// TODO: parse the result string
+			table.Render()
+
+			outBuffer := bytes.NewBufferString("")
+			errBuffer := bytes.NewBufferString("")
+
+			s.clientCMD.SetOut(outBuffer)
+			s.clientCMD.SetErr(errBuffer)
+			s.clientCMD.SetArgs([]string{
+				"ls",
+				"-a",
+				s.config.Address,
+				"-u",
+				s.config.User,
+				"-p",
+				s.config.Password,
+				tc.path,
+			})
+
+			// act
+			err := s.clientCMD.Execute()
+
+			// assert
+			require.NoError(s.T(), err)
+			assert.Empty(s.T(), errBuffer.String())
+
+			if table.NumLines() == 0 {
+				assert.Contains(t, outBuffer.String(), "no entries found under specified path")
+			} else {
+				assert.Equal(s.T(), expectedOutBuffer.String(), outBuffer.String())
+			}
+		})
+	}
 }
 
 // nolint:dupl // similar to Test_StatusTestSuite_InvalidParameters

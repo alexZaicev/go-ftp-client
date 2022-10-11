@@ -3,7 +3,7 @@ package tests
 import (
 	"bytes"
 	"errors"
-	"strings"
+	"github.com/olekukonko/tablewriter"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -42,6 +42,18 @@ func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
 
 func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	// arrange
+	expectedOutBuffer := bytes.NewBufferString("")
+	table := tablewriter.NewWriter(expectedOutBuffer)
+	table.SetHeader([]string{
+		"status",
+		"system",
+		"remote address",
+		"logged in user",
+		"tls enabled",
+	})
+	table.Append([]string{"OK", "UNIX", "172.22.0.11", s.config.User, "NO"})
+	table.Render()
+
 	outBuffer := bytes.NewBufferString("")
 	errBuffer := bytes.NewBufferString("")
 
@@ -64,18 +76,7 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	require.NoError(s.T(), err)
 	assert.Empty(s.T(), errBuffer.String())
 
-	result := outBuffer.String()
-	for _, eh := range []string{
-		"STATUS", "SYSTEM", "REMOTE ADDRESS", "LOGGED IN USER", "TLS ENABLED",
-	} {
-		assert.Equal(
-			s.T(),
-			1,
-			strings.Count(result, eh),
-			"expected header %q not found",
-			eh,
-		)
-	}
+	assert.Equal(s.T(), expectedOutBuffer.String(), outBuffer.String())
 }
 
 // nolint:dupl // similar to Test_ListTestSuite_InvalidParameters
