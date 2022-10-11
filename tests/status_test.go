@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/olekukonko/tablewriter"
+	"net"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -25,6 +26,7 @@ type StatusTestSuite struct {
 	suite.Suite
 	config    *utils.Config
 	clientCMD *cobra.Command
+	remoteIP  net.IP
 }
 
 func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
@@ -34,9 +36,12 @@ func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
 	clientCMD, err := cli.NewGfcCommand()
 	require.NoError(t, err, "error creating client CMD")
 
+	remoteIP := utils.GetOutboundIP()
+
 	return &StatusTestSuite{
 		config:    config,
 		clientCMD: clientCMD,
+		remoteIP:  remoteIP,
 	}
 }
 
@@ -51,7 +56,7 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 		"logged in user",
 		"tls enabled",
 	})
-	table.Append([]string{"OK", "UNIX", "172.22.0.11", s.config.User, "NO"})
+	table.Append([]string{"OK", "UNIX", s.remoteIP.String(), s.config.User, "NO"})
 	table.Render()
 
 	outBuffer := bytes.NewBufferString("")
