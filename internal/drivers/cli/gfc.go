@@ -45,6 +45,9 @@ func NewGfcCommand() (*cobra.Command, error) {
 	if err := AddUploadCommand(rootCMD); err != nil {
 		return nil, errors.NewInternalError("failed to setup upload command", err)
 	}
+	if err := AddMkdirCommand(rootCMD); err != nil {
+		return nil, errors.NewInternalError("failed to setup mkdir command", err)
+	}
 
 	return rootCMD, nil
 }

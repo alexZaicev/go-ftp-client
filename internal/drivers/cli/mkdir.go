@@ -7,22 +7,22 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/list"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/mkdir"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
-	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-func AddListCommand(rootCMD *cobra.Command) error {
+// nolint:dupl // similar to AddStatusCommand
+func AddMkdirCommand(rootCMD *cobra.Command) error {
 	// nolint:dupl // single use case command are very similar
-	listCMD := &cobra.Command{
-		Use:   "ls",
-		Short: "List files in directory.",
+	mkdirCMD := &cobra.Command{
+		Use:   "mkdir",
+		Short: "Create directory(ies).",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := context.Background()
 
-			input, err := parseListFlags(cmd.Flags(), args)
+			input, err := parseMkdirFlags(cmd.Flags(), args)
 			if err != nil {
 				return err
 			}
@@ -36,36 +36,32 @@ func AddListCommand(rootCMD *cobra.Command) error {
 				return ftperrors.NewInternalError("failed to setup logger", err)
 			}
 
-			dependencies := &list.Dependencies{
+			dependencies := &mkdir.Dependencies{
 				Connector: ftpclient.NewConnector(),
-				UseCase:   &ftp.ListFiles{},
+				UseCase:   &ftp.Mkdir{},
 				OutWriter: cmd.OutOrStdout(),
 			}
 
-			err = list.PerformListFiles(ctx, logger, dependencies, input)
+			err = mkdir.PerformMkdir(ctx, logger, dependencies, input)
 			return
 		},
 	}
 
-	listCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := listCMD.MarkFlagRequired(ArgAddress); err != nil {
+	mkdirCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
+	if err := mkdirCMD.MarkFlagRequired(ArgAddress); err != nil {
 		return err
 	}
 
-	listCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	listCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
+	mkdirCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
+	mkdirCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
 
-	listCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
+	mkdirCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
 
-	listCMD.Flags().String(ArgSort, string(models.SortTypeName), "Sort returned entries by NAME/SIZE/DATE")
-
-	listCMD.Flags().Bool(ArgAll, false, "Do not ignore entries starting with '.'")
-
-	rootCMD.AddCommand(listCMD)
+	rootCMD.AddCommand(mkdirCMD)
 	return nil
 }
 
-func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, error) {
+func parseMkdirFlags(flagSet *pflag.FlagSet, args []string) (*mkdir.CmdMkdirInput, error) {
 	address, err := flagSet.GetString(ArgAddress)
 	if err != nil {
 		return nil, err
@@ -86,16 +82,6 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 		return nil, err
 	}
 
-	showAll, err := flagSet.GetBool(ArgAll)
-	if err != nil {
-		return nil, err
-	}
-
-	sortTypeStr, err := flagSet.GetString(ArgSort)
-	if err != nil {
-		return nil, err
-	}
-
 	if len(args) > 1 {
 		return nil, ftperrors.NewInvalidArgumentError("args", "cannot contain more than one path")
 	}
@@ -104,14 +90,12 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 		args = append(args, "./")
 	}
 
-	return &list.CmdListInput{
+	return &mkdir.CmdMkdirInput{
 		Address:  address,
 		User:     user,
 		Password: pwd,
 		Verbose:  verbose,
 		Timeout:  defaultConnectionTimeout,
-		ShowAll:  showAll,
 		Path:     args[0],
-		SortType: models.SortType(sortTypeStr),
 	}, nil
 }
