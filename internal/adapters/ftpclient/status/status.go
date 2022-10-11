@@ -8,6 +8,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
+	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	useCase "github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
@@ -41,12 +42,12 @@ func PerformStatus(ctx context.Context, logger logging.Logger, deps *Dependencie
 		logger.WithError(err).Error("failed to connect to server")
 		return err
 	}
-	defer func() {
+	defer func(conn connection.Connection) {
 		if stopErr := conn.Stop(); stopErr != nil {
 			logger.WithError(stopErr).Error("failed to stop server connection")
 			err = stopErr
 		}
-	}()
+	}(conn)
 
 	useCaseRepos := &useCase.StatusRepos{
 		Logger:     logger,

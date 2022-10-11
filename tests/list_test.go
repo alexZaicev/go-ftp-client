@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -16,31 +15,31 @@ import (
 	"github.com/alexZaicev/go-ftp-client/tests/utils"
 )
 
-func Test_FTPClient_Status(t *testing.T) {
-	ts := NewStatusTestSuite(t)
+func Test_FTPClient_List(t *testing.T) {
+	ts := NewListTestSuite(t)
 	suite.Run(t, ts)
 }
 
-type StatusTestSuite struct {
+type ListTestSuite struct {
 	suite.Suite
 	config    *utils.Config
 	clientCMD *cobra.Command
 }
 
-func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
+func NewListTestSuite(t *testing.T) *ListTestSuite {
 	config, err := utils.LoadConfig()
 	require.NoError(t, err, "error loading tests configuration file")
 
 	clientCMD, err := cli.NewGfcCommand()
 	require.NoError(t, err, "error creating client CMD")
 
-	return &StatusTestSuite{
+	return &ListTestSuite{
 		config:    config,
 		clientCMD: clientCMD,
 	}
 }
 
-func (s *StatusTestSuite) Test_StatusTest_Happy() {
+func (s *ListTestSuite) Test_ListTest_Happy() {
 	// arrange
 	outBuffer := bytes.NewBufferString("")
 	errBuffer := bytes.NewBufferString("")
@@ -48,7 +47,7 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	s.clientCMD.SetOut(outBuffer)
 	s.clientCMD.SetErr(errBuffer)
 	s.clientCMD.SetArgs([]string{
-		"status",
+		"ls",
 		"-a",
 		s.config.Address,
 		"-u",
@@ -64,22 +63,11 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	require.NoError(s.T(), err)
 	assert.Empty(s.T(), errBuffer.String())
 
-	result := outBuffer.String()
-	for _, eh := range []string{
-		"STATUS", "SYSTEM", "REMOTE ADDRESS", "LOGGED IN USER", "TLS ENABLED",
-	} {
-		assert.Equal(
-			s.T(),
-			1,
-			strings.Count(result, eh),
-			"expected header %q not found",
-			eh,
-		)
-	}
+	// TODO: parse the result string
 }
 
-// nolint:dupl // similar to Test_ListTestSuite_InvalidParameters
-func (s *StatusTestSuite) Test_StatusTestSuite_InvalidParameters() {
+// nolint:dupl // similar to Test_StatusTestSuite_InvalidParameters
+func (s *ListTestSuite) Test_ListTestSuite_InvalidParameters() {
 	testCases := []struct {
 		name                    string
 		address                 string
@@ -123,7 +111,7 @@ func (s *StatusTestSuite) Test_StatusTestSuite_InvalidParameters() {
 			s.clientCMD.SetOut(outBuffer)
 			s.clientCMD.SetErr(errBuffer)
 			s.clientCMD.SetArgs([]string{
-				"status",
+				"ls",
 				"-a",
 				tc.address,
 				"-u",

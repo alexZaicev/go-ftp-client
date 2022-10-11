@@ -52,7 +52,7 @@ fmt: vendor
 
 .PHONY: golint
 golint:
-	golangci-lint run --timeout=3m --max-issues-per-linter 0 --max-same-issues 0
+	golangci-lint run --concurrency=2 --timeout=30m --max-issues-per-linter 0 --max-same-issues 0
 
 .PHONY: mocks
 mocks: $(INTERNAL_NON_TEST_GO_FILES)

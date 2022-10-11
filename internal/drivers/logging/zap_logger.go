@@ -2,6 +2,7 @@ package logging
 
 import (
 	"errors"
+	"os"
 	"strings"
 
 	"go.uber.org/zap"
@@ -97,18 +98,24 @@ func (z *ZapJSONLogger) Flush() error {
 }
 
 func zapLoggerFromConfig(config zap.Config, hooks ...func(zapcore.Entry) error) (*ZapJSONLogger, error) {
-	logHooks := zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-		return zapcore.RegisterHooks(core, hooks...)
-	})
-
-	logger, err := config.Build(
-		// ignore the logger itself when providing caller
-		zap.AddCallerSkip(1),
-		logHooks,
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		os.Stdout,
+		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
-	if err != nil {
-		return nil, err
-	}
+	logger := zap.New(core)
+	//logHooks := zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+	//	return zapcore.RegisterHooks(core, hooks...)
+	//})
+	//
+	//logger, err := config.Build(
+	//	// ignore the logger itself when providing caller
+	//	zap.AddCallerSkip(1),
+	//	logHooks,
+	//)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &ZapJSONLogger{
 		logger: logger,
