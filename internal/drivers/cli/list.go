@@ -27,7 +27,11 @@ func AddListCommand(rootCMD *cobra.Command) error {
 				return err
 			}
 
-			logger, err := logging.NewZapJSONLogger(getLogLevel(input.Verbose))
+			logger, err := logging.NewZapJSONLogger(
+				getLogLevel(input.Verbose),
+				cmd.OutOrStdout(),
+				cmd.ErrOrStderr(),
+			)
 			if err != nil {
 				return errors.NewInternalError("failed to setup logger", err)
 			}
