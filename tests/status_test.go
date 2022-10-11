@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"github.com/olekukonko/tablewriter"
-	"net"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -26,7 +25,6 @@ type StatusTestSuite struct {
 	suite.Suite
 	config    *utils.Config
 	clientCMD *cobra.Command
-	remoteIP  net.IP
 }
 
 func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
@@ -36,12 +34,9 @@ func NewStatusTestSuite(t *testing.T) *StatusTestSuite {
 	clientCMD, err := cli.NewGfcCommand()
 	require.NoError(t, err, "error creating client CMD")
 
-	remoteIP := utils.GetOutboundIP()
-
 	return &StatusTestSuite{
 		config:    config,
 		clientCMD: clientCMD,
-		remoteIP:  remoteIP,
 	}
 }
 
@@ -56,8 +51,6 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 		"logged in user",
 		"tls enabled",
 	})
-	table.Append([]string{"OK", "UNIX", s.remoteIP.String(), s.config.User, "NO"})
-	table.Render()
 
 	outBuffer := bytes.NewBufferString("")
 	errBuffer := bytes.NewBufferString("")
@@ -81,7 +74,13 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	require.NoError(s.T(), err)
 	assert.Empty(s.T(), errBuffer.String())
 
-	assert.Equal(s.T(), expectedOutBuffer.String(), outBuffer.String())
+	// extract IP
+	result := outBuffer.String()
+	addr := utils.ExtractRemoteAddress(result)
+	table.Append([]string{"OK", "UNIX", addr, s.config.User, "NO"})
+	table.Render()
+
+	assert.Equal(s.T(), expectedOutBuffer.String(), result)
 }
 
 // nolint:dupl // similar to Test_ListTestSuite_InvalidParameters
