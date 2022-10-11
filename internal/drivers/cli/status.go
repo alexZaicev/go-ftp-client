@@ -13,6 +13,7 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
+// nolint:dupl // similar to AddMkdirCommand
 func AddStatusCommand(rootCMD *cobra.Command) error {
 	// nolint:dupl // single use case command are very similar
 	statusCMD := &cobra.Command{

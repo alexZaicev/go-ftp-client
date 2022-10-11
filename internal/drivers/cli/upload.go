@@ -10,7 +10,7 @@ import (
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/upload"
-	"github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
@@ -18,7 +18,7 @@ import (
 func AddUploadCommand(rootCMD *cobra.Command) error {
 	uploadCMD := &cobra.Command{
 		Use:   "upload",
-		Short: "Upload file(s) to the server",
+		Short: "Upload file(s) to the server.",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := context.Background()
 
@@ -33,7 +33,7 @@ func AddUploadCommand(rootCMD *cobra.Command) error {
 				cmd.ErrOrStderr(),
 			)
 			if err != nil {
-				return errors.NewInternalError("failed to setup logger", err)
+				return ftperrors.NewInternalError("failed to setup logger", err)
 			}
 
 			filesystem := os.DirFS("/")
@@ -107,7 +107,7 @@ func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadI
 	}
 
 	if len(args) > 1 {
-		return nil, errors.NewInvalidArgumentError("args", "cannot contain more than one path")
+		return nil, ftperrors.NewInvalidArgumentError("args", "cannot contain more than one path")
 	}
 	// if no args provided, set path to list current working directory
 	if len(args) == 0 {
