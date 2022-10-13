@@ -17,7 +17,7 @@ const (
 type unixListParser struct {
 }
 
-func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, error) {
+func (p *unixListParser) Parse(data string, _ *Options) (*entities.Entry, error) {
 	entry := &entities.Entry{}
 	var token string
 
@@ -53,7 +53,7 @@ func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, 
 	// last modification date
 	const tokenSize = 3
 	dateTokens := make([]string, 0, tokenSize)
-	for idx := 0; idx < 3; idx++ {
+	for idx := 0; idx < tokenSize; idx++ {
 		data, token = p.nextToken(data)
 		dateTokens = append(dateTokens, token)
 	}
@@ -65,7 +65,18 @@ func (p *unixListParser) Parse(data string, options *Options) (*entities.Entry, 
 	entry.LastModificationDate = lastModificationDate
 
 	// name
-	entry.Name = strings.TrimSpace(data)
+	name := strings.TrimSpace(data)
+
+	if entryType == entities.EntryTypeLink {
+		const tokenSize = 2
+		tokens := strings.SplitN(name, "->", tokenSize)
+		if len(tokens) == tokenSize {
+			entry.LinkName = strings.TrimSpace(tokens[1])
+		}
+		entry.Name = strings.TrimSpace(tokens[0])
+	} else {
+		entry.Name = name
+	}
 
 	return entry, nil
 }

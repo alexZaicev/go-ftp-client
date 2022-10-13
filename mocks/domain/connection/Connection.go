@@ -110,6 +110,34 @@ func (_m *Connection) Ready() error {
 	return r0
 }
 
+// RemoveDir provides a mock function with given fields: path
+func (_m *Connection) RemoveDir(path string) error {
+	ret := _m.Called(path)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RemoveFile provides a mock function with given fields: path
+func (_m *Connection) RemoveFile(path string) error {
+	ret := _m.Called(path)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Size provides a mock function with given fields: path
 func (_m *Connection) Size(path string) (uint64, error) {
 	ret := _m.Called(path)

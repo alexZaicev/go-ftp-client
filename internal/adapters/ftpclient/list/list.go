@@ -11,6 +11,7 @@ import (
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
+	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 	ftpErrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
@@ -92,11 +93,16 @@ func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependen
 			return cnvErr
 		}
 
+		entryName := entry.Name
+		if entry.Type == entities.EntryTypeLink && entry.LinkName != "" {
+			entryName = fmt.Sprintf("%s -> %s", entryName, entry.LinkName)
+		}
+
 		table.Append([]string{
 			entryType,
 			entry.Permissions,
 			fmt.Sprintf("%s:%s", entry.OwnerUser, entry.OwnerGroup),
-			entry.Name,
+			entryName,
 			entry.LastModificationDate.Format(ftpclient.DateFormat),
 			ftpclient.FormatSizeInBytes(entry.SizeInBytes),
 		})

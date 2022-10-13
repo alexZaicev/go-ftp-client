@@ -28,4 +28,6 @@ type Connection interface {
 	Upload(ctx context.Context, options *UploadOptions) error
 	Cd(path string) error
 	Size(path string) (uint64, error)
+	RemoveFile(path string) error
+	RemoveDir(path string) error
 }

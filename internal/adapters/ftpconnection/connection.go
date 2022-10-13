@@ -38,6 +38,8 @@ const (
 	CommandMakeDir              = "MKD %s"
 	CommandChangeWorkDir        = "CWD %s"
 	CommandSize                 = "SIZE %s"
+	CommandRemoveFile           = "DELE %s"
+	CommandRemoveDir            = "RMD %s"
 
 	Off = "OFF"
 	On  = "ON"

@@ -23,3 +23,4 @@ A simple CLI utility for executing FTP client without then need of installing ad
   - [ ] TLS support
   - [ ] Support configuration file
   - [ ] Support env variables
+  - [ ] Add repos/input validator functions
