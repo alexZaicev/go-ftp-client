@@ -16,7 +16,7 @@ A simple CLI utility for executing FTP client without then need of installing ad
   - [x] Status
   - [x] Make dir
   - [x] List
-  - [ ] Remove file/directory
+  - [x] Remove file/directory
   - [ ] Rename file/directory
   - [x] Upload file/directory
   - [ ] Download file/directory
