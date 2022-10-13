@@ -22,6 +22,7 @@ type Entry struct {
 	Type                 EntryType
 	Permissions          string
 	Name                 string
+	LinkName             string
 	OwnerUser            string
 	OwnerGroup           string
 	SizeInBytes          uint64

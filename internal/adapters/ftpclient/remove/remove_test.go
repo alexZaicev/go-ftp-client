@@ -1,4 +1,4 @@
-package mkdir_test
+package remove_test
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/mkdir"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/remove"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging/assertlogging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 	ftpclientMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpclient"
@@ -27,7 +27,7 @@ const (
 	path     = "/foo/bar/baz"
 )
 
-func Test_PerformMkdir_Success(t *testing.T) {
+func Test_PerformRemove_Success(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -49,16 +49,17 @@ func Test_PerformMkdir_Success(t *testing.T) {
 		Return(ftpConnMock, nil).
 		Once()
 
-	useCaseRepos := &ftp.MkdirRepos{
+	useCaseRepos := &ftp.RemoveRepos{
 		Logger:     logger,
 		Connection: ftpConnMock,
 	}
 
-	useCaseInput := &ftp.MkdirInput{
-		Path: path,
+	useCaseInput := &ftp.RemoveInput{
+		Path:      path,
+		Recursive: true,
 	}
 
-	useCaseMock := useCaseMocks.NewMkdirUseCase(t)
+	useCaseMock := useCaseMocks.NewRemoveUseCase(t)
 	useCaseMock.
 		On("Execute", ctx, useCaseRepos, useCaseInput).
 		Return(nil).
@@ -66,28 +67,29 @@ func Test_PerformMkdir_Success(t *testing.T) {
 
 	buffer := bytes.NewBufferString("")
 
-	deps := &mkdir.Dependencies{
+	deps := &remove.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
 		OutWriter: buffer,
 	}
-	input := &mkdir.CmdMkdirInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		Path:     path,
+	input := &remove.CmdRemoveInput{
+		Address:   address,
+		User:      user,
+		Password:  password,
+		Verbose:   true,
+		Timeout:   timeout,
+		Path:      path,
+		Recursive: true,
 	}
 
 	// act
-	err := mkdir.PerformMkdir(ctx, logger, deps, input)
+	err := remove.PerformRemove(ctx, logger, deps, input)
 
 	// assert
 	assert.NoError(t, err)
 }
 
-func Test_PerformMkdir_ConnectError(t *testing.T) {
+func Test_PerformRemove_ConnectError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -108,33 +110,34 @@ func Test_PerformMkdir_ConnectError(t *testing.T) {
 		Return(nil, errors.New("mock error")).
 		Once()
 
-	useCaseMock := useCaseMocks.NewMkdirUseCase(t)
+	useCaseMock := useCaseMocks.NewRemoveUseCase(t)
 
 	buffer := bytes.NewBufferString("")
 
-	deps := &mkdir.Dependencies{
+	deps := &remove.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
 		OutWriter: buffer,
 	}
-	input := &mkdir.CmdMkdirInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		Path:     path,
+	input := &remove.CmdRemoveInput{
+		Address:   address,
+		User:      user,
+		Password:  password,
+		Verbose:   true,
+		Timeout:   timeout,
+		Path:      path,
+		Recursive: true,
 	}
 
 	// act
-	err := mkdir.PerformMkdir(ctx, logger, deps, input)
+	err := remove.PerformRemove(ctx, logger, deps, input)
 
 	// assert
 	require.EqualError(t, err, "mock error")
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_PerformMkdir_ConnectStopError(t *testing.T) {
+func Test_PerformRemove_ConnectStopError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -159,15 +162,16 @@ func Test_PerformMkdir_ConnectStopError(t *testing.T) {
 		Return(ftpConnMock, nil).
 		Once()
 
-	useCaseRepos := &ftp.MkdirRepos{
+	useCaseRepos := &ftp.RemoveRepos{
 		Logger:     logger,
 		Connection: ftpConnMock,
 	}
-	useCaseInput := &ftp.MkdirInput{
-		Path: path,
+	useCaseInput := &ftp.RemoveInput{
+		Path:      path,
+		Recursive: true,
 	}
 
-	useCaseMock := useCaseMocks.NewMkdirUseCase(t)
+	useCaseMock := useCaseMocks.NewRemoveUseCase(t)
 	useCaseMock.
 		On("Execute", ctx, useCaseRepos, useCaseInput).
 		Return(nil).
@@ -175,29 +179,30 @@ func Test_PerformMkdir_ConnectStopError(t *testing.T) {
 
 	buffer := bytes.NewBufferString("")
 
-	deps := &mkdir.Dependencies{
+	deps := &remove.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
 		OutWriter: buffer,
 	}
-	input := &mkdir.CmdMkdirInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		Path:     path,
+	input := &remove.CmdRemoveInput{
+		Address:   address,
+		User:      user,
+		Password:  password,
+		Verbose:   true,
+		Timeout:   timeout,
+		Path:      path,
+		Recursive: true,
 	}
 
 	// act
-	err := mkdir.PerformMkdir(ctx, logger, deps, input)
+	err := remove.PerformRemove(ctx, logger, deps, input)
 
 	// assert
 	require.EqualError(t, err, "mock error")
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_PerformMkdir_UseCaseError(t *testing.T) {
+func Test_PerformRemove_UseCaseError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -218,15 +223,16 @@ func Test_PerformMkdir_UseCaseError(t *testing.T) {
 		Return(ftpConnMock, nil).
 		Once()
 
-	useCaseRepos := &ftp.MkdirRepos{
+	useCaseRepos := &ftp.RemoveRepos{
 		Logger:     logger,
 		Connection: ftpConnMock,
 	}
-	useCaseInput := &ftp.MkdirInput{
-		Path: path,
+	useCaseInput := &ftp.RemoveInput{
+		Path:      path,
+		Recursive: true,
 	}
 
-	useCaseMock := useCaseMocks.NewMkdirUseCase(t)
+	useCaseMock := useCaseMocks.NewRemoveUseCase(t)
 	useCaseMock.
 		On("Execute", ctx, useCaseRepos, useCaseInput).
 		Return(errors.New("mock error")).
@@ -234,22 +240,23 @@ func Test_PerformMkdir_UseCaseError(t *testing.T) {
 
 	buffer := bytes.NewBufferString("")
 
-	deps := &mkdir.Dependencies{
+	deps := &remove.Dependencies{
 		Connector: connMock,
 		UseCase:   useCaseMock,
 		OutWriter: buffer,
 	}
-	input := &mkdir.CmdMkdirInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		Path:     path,
+	input := &remove.CmdRemoveInput{
+		Address:   address,
+		User:      user,
+		Password:  password,
+		Verbose:   true,
+		Timeout:   timeout,
+		Path:      path,
+		Recursive: true,
 	}
 
 	// act
-	err := mkdir.PerformMkdir(ctx, logger, deps, input)
+	err := remove.PerformRemove(ctx, logger, deps, input)
 
 	// assert
 	require.EqualError(t, err, "mock error")

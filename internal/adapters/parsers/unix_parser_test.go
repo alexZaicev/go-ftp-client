@@ -64,7 +64,8 @@ func Test_unixListParser_Parse_Success(t *testing.T) {
 				OwnerGroup:           "root",
 				SizeInBytes:          2,
 				LastModificationDate: time.Date(0, 9, 8, 15, 15, 0, 0, time.UTC),
-				Name:                 "logs -> /var/logs",
+				Name:                 "logs",
+				LinkName:             "/var/logs",
 			},
 		},
 	}

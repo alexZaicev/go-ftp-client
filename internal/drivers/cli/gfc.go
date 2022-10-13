@@ -48,6 +48,9 @@ func NewGfcCommand() (*cobra.Command, error) {
 	if err := AddMkdirCommand(rootCMD); err != nil {
 		return nil, errors.NewInternalError("failed to setup mkdir command", err)
 	}
+	if err := AddRemoveCommand(rootCMD); err != nil {
+		return nil, errors.NewInternalError("failed to setup remove command", err)
+	}
 
 	return rootCMD, nil
 }
