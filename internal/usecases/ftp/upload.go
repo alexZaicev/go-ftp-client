@@ -60,7 +60,7 @@ func (u *UploadFile) Execute(ctx context.Context, repos *UploadFileRepos, input 
 		return ftperrors.NewInternalError("failed to upload file", nil)
 	}
 
-	sizeInBytes, err := repos.Connection.Size(input.RemotePath)
+	sizeInBytes, err := repos.Connection.Size(fileName)
 	if err != nil {
 		repos.Logger.WithError(err).Error("failed to check file size")
 		return ftperrors.NewInternalError("failed to check file size", nil)

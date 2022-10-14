@@ -7,21 +7,21 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/remove"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/move"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
 // nolint:dupl // similar to AddStatusCommand
-func AddRemoveCommand(rootCMD *cobra.Command) error {
+func AddMoveCommand(rootCMD *cobra.Command) error {
 	removeCMD := &cobra.Command{
-		Use:   "rm",
-		Short: "Remove file or directory",
+		Use:   "mv",
+		Short: "Move file or directory",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := context.Background()
 
-			input, err := parseRemoveFlags(cmd.Flags(), args)
+			input, err := parseMoveFlags(cmd.Flags(), args)
 			if err != nil {
 				return err
 			}
@@ -35,13 +35,13 @@ func AddRemoveCommand(rootCMD *cobra.Command) error {
 				return ftperrors.NewInternalError("failed to setup logger", err)
 			}
 
-			dependencies := &remove.Dependencies{
+			dependencies := &move.Dependencies{
 				Connector: ftpclient.NewConnector(),
-				UseCase:   &ftp.Remove{},
+				UseCase:   &ftp.Move{},
 				OutWriter: cmd.OutOrStdout(),
 			}
 
-			err = remove.PerformRemove(ctx, logger, dependencies, input)
+			err = move.PerformMove(ctx, logger, dependencies, input)
 			return
 		},
 	}
@@ -62,7 +62,7 @@ func AddRemoveCommand(rootCMD *cobra.Command) error {
 	return nil
 }
 
-func parseRemoveFlags(flagSet *pflag.FlagSet, args []string) (*remove.CmdRemoveInput, error) {
+func parseMoveFlags(flagSet *pflag.FlagSet, args []string) (*move.CmdMoveInput, error) {
 	address, err := flagSet.GetString(ArgAddress)
 	if err != nil {
 		return nil, err
@@ -83,22 +83,21 @@ func parseRemoveFlags(flagSet *pflag.FlagSet, args []string) (*remove.CmdRemoveI
 		return nil, err
 	}
 
-	recursive, err := flagSet.GetBool(ArgRecursive)
-	if err != nil {
-		return nil, err
+	// nolint:gomnd // expecting 2 args for command
+	if len(args) != 2 {
+		return nil, ftperrors.NewInvalidArgumentError(
+			"args",
+			"should contain a valid path to file/directory and a new name (e.g. '/foo/bar baz')",
+		)
 	}
 
-	if len(args) != 1 {
-		return nil, ftperrors.NewInvalidArgumentError("args", "should contain exactly one valid path")
-	}
-
-	return &remove.CmdRemoveInput{
-		Address:   address,
-		User:      user,
-		Password:  pwd,
-		Verbose:   verbose,
-		Timeout:   defaultConnectionTimeout,
-		Path:      args[0],
-		Recursive: recursive,
+	return &move.CmdMoveInput{
+		Address:  address,
+		User:     user,
+		Password: pwd,
+		Verbose:  verbose,
+		Timeout:  defaultConnectionTimeout,
+		OldPath:  args[0],
+		NewPath:  args[1],
 	}, nil
 }

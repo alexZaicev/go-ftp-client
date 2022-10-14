@@ -333,6 +333,7 @@ func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// nolint:dupl // similar to Test_ServerConnection_Move_PrepareCmdError
 func Test_ServerConnection_Login_UserCmdError(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
@@ -373,6 +374,7 @@ func Test_ServerConnection_Login_InvalidStatusFromUserCmd(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
+// nolint:dupl // similar to Test_ServerConnection_Move_MoveCmdError
 func Test_ServerConnection_Login_PasswordError(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)

@@ -27,9 +27,9 @@ build: vendor
 .PHONY: unit
 unit: vendor
 	go test $(INTERNAL_DIR)/... $(CMD_DIR)/... \
-  		-cover \
-    	-coverprofile=coverage.out \
-    	-count=1
+		-cover \
+		-coverprofile=coverage.out \
+		-count=1
 	@cat coverage.out | \
 		awk 'BEGIN {cov=0; stat=0;} $$3!="" { cov+=($$3==1?$$2:0); stat+=$$2; } \
     	END {printf("Total coverage: %.2f%% of statements\n", (cov/stat)*100);}'

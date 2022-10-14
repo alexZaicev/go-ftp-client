@@ -78,7 +78,7 @@ func Test_UploadFile_Execute_WithDirSuccess(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Size", remotePathWithDir).
+		On("Size", fileName).
 		Return(sizeInBytes, nil).
 		Once()
 
@@ -232,7 +232,7 @@ func Test_UploadFile_Execute_SizeError(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Size", remotePathWithDir).
+		On("Size", fileName).
 		Return(uint64(0), errors.New("mock error")).
 		Once()
 
@@ -284,7 +284,7 @@ func Test_UploadFile_Execute_SizeMismatchError(t *testing.T) {
 		Return(nil).
 		Once()
 	connMock.
-		On("Size", remotePathWithDir).
+		On("Size", fileName).
 		Return(sizeInBytes-100, nil).
 		Once()
 
