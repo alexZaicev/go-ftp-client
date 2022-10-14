@@ -85,10 +85,7 @@ func parseMoveFlags(flagSet *pflag.FlagSet, args []string) (*move.CmdMoveInput, 
 
 	// nolint:gomnd // expecting 2 args for command
 	if len(args) != 2 {
-		return nil, ftperrors.NewInvalidArgumentError(
-			"args",
-			"should contain a valid path to file/directory and a new name (e.g. '/foo/bar baz')",
-		)
+		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid from and to paths")
 	}
 
 	return &move.CmdMoveInput{
