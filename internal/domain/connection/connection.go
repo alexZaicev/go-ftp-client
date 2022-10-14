@@ -30,4 +30,5 @@ type Connection interface {
 	Size(path string) (uint64, error)
 	RemoveFile(path string) error
 	RemoveDir(path string) error
+	Move(oldPath string, newPath string) error
 }

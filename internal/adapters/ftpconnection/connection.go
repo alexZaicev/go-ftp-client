@@ -40,6 +40,8 @@ const (
 	CommandSize                 = "SIZE %s"
 	CommandRemoveFile           = "DELE %s"
 	CommandRemoveDir            = "RMD %s"
+	CommandRenameFrom           = "RNFR %s"
+	CommandRenameTo             = "RNTO %s"
 
 	Off = "OFF"
 	On  = "ON"

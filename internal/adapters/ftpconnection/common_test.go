@@ -8,7 +8,8 @@ import (
 const (
 	uid uint = 1
 
-	remotePath = "/foo/bar/baz"
+	remotePath    = "/foo/bar/baz"
+	newRemotePath = "/baz/bar/foo"
 
 	host     = "ftp-dev-client"
 	user     = "user01"

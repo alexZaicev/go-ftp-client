@@ -51,6 +51,9 @@ func NewGfcCommand() (*cobra.Command, error) {
 	if err := AddRemoveCommand(rootCMD); err != nil {
 		return nil, errors.NewInternalError("failed to setup remove command", err)
 	}
+	if err := AddMoveCommand(rootCMD); err != nil {
+		return nil, errors.NewInternalError("failed to setup move command", err)
+	}
 
 	return rootCMD, nil
 }

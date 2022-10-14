@@ -96,6 +96,20 @@ func (_m *Connection) Mkdir(path string) error {
 	return r0
 }
 
+// Move provides a mock function with given fields: oldPath, newPath
+func (_m *Connection) Move(oldPath string, newPath string) error {
+	ret := _m.Called(oldPath, newPath)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(oldPath, newPath)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Ready provides a mock function with given fields:
 func (_m *Connection) Ready() error {
 	ret := _m.Called()

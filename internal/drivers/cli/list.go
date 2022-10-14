@@ -97,8 +97,12 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 	}
 
 	if len(args) > 1 {
-		return nil, ftperrors.NewInvalidArgumentError("args", "cannot contain more than one path")
+		return nil, ftperrors.NewInvalidArgumentError(
+			"args",
+			"should be empty or contain exactly one valid path",
+		)
 	}
+
 	// if no args provided, set path to list current working directory
 	if len(args) == 0 {
 		args = append(args, "./")

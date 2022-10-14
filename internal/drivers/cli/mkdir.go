@@ -82,12 +82,8 @@ func parseMkdirFlags(flagSet *pflag.FlagSet, args []string) (*mkdir.CmdMkdirInpu
 		return nil, err
 	}
 
-	if len(args) > 1 {
-		return nil, ftperrors.NewInvalidArgumentError("args", "cannot contain more than one path")
-	}
-	// if no args provided, set path to list current working directory
-	if len(args) == 0 {
-		args = append(args, "./")
+	if len(args) != 1 {
+		return nil, ftperrors.NewInvalidArgumentError("args", "should contain exactly one valid path")
 	}
 
 	return &mkdir.CmdMkdirInput{
