@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -17,7 +18,7 @@ func Test_ServerConnection_Ready_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("ReadResponse", ftpconnection.StatusReady).
+		On("ReadResponse", models.StatusReady).
 		Return(0, "", nil).
 		Once()
 
@@ -33,11 +34,11 @@ func Test_ServerConnection_Ready_ReadResponseError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("ReadResponse", ftpconnection.StatusReady).
+		On("ReadResponse", models.StatusReady).
 		Return(0, "", errors.New("mock error")).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandQuit).
+		On("Cmd", models.CommandQuit).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -59,11 +60,11 @@ func Test_ServerConnection_Ready_StopError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("ReadResponse", ftpconnection.StatusReady).
+		On("ReadResponse", models.StatusReady).
 		Return(0, "", errors.New("mock error")).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandQuit).
+		On("Cmd", models.CommandQuit).
 		Return(uid, nil).
 		Once()
 	connMock.

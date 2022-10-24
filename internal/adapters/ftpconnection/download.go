@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
@@ -14,7 +15,7 @@ func (c *ServerConnection) Download(ctx context.Context, path string) ([]byte, e
 		return nil, ftperrors.NewInvalidArgumentError("path", ftperrors.ErrMsgCannotBeBlank)
 	}
 
-	conn, err := c.cmdWithDataConn(ctx, 0, CommandRetrieve, path)
+	conn, err := c.cmdWithDataConn(ctx, 0, models.CommandRetrieve, path)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to open data transfer connection", err)
 	}

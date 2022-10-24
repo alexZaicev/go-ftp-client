@@ -3,12 +3,13 @@ package ftpconnection
 import (
 	"strings"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
 func (c *ServerConnection) Status() (*entities.Status, error) {
-	_, msg, err := c.cmd(StatusSystem, CommandStatus)
+	_, msg, err := c.cmd(models.StatusSystem, models.CommandStatus)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to fetch server status", err)
 	}
@@ -43,7 +44,7 @@ func (c *ServerConnection) Status() (*entities.Status, error) {
 		// TODO: add status check TLS
 	}
 
-	_, msg, err = c.cmd(StatusName, CommandSystem)
+	_, msg, err = c.cmd(models.StatusName, models.CommandSystem)
 	if err != nil {
 		return nil, ftperrors.NewInternalError("failed to fetch system type", err)
 	}

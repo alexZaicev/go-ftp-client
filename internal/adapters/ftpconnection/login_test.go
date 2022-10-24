@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -20,19 +21,19 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 	}{
 		{
 			name:          "status command ok",
-			utfStatusCode: ftpconnection.StatusCommandOK,
+			utfStatusCode: models.StatusCommandOK,
 		},
 		{
 			name:          "status bad arguments",
-			utfStatusCode: ftpconnection.StatusBadArguments,
+			utfStatusCode: models.StatusBadArguments,
 		},
 		{
 			name:          "status not implemented parameter",
-			utfStatusCode: ftpconnection.StatusNotImplementedParameter,
+			utfStatusCode: models.StatusNotImplementedParameter,
 		},
 		{
 			name:          "status command not implemented",
-			utfStatusCode: ftpconnection.StatusCommandNotImplemented,
+			utfStatusCode: models.StatusCommandNotImplemented,
 		},
 	}
 
@@ -42,43 +43,43 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 			dialer := ftpConnectionMocks.NewDialer(t)
 			connMock := ftpConnectionMocks.NewTextConnection(t)
 			connMock.
-				On("Cmd", ftpconnection.CommandUser, user).
+				On("Cmd", models.CommandUser, user).
 				Return(uid, nil).
 				Once()
 			connMock.
-				On("ReadResponse", ftpconnection.StatusNoCheck).
-				Return(ftpconnection.StatusUserOK, "", nil).
+				On("ReadResponse", models.StatusNoCheck).
+				Return(models.StatusUserOK, "", nil).
 				Once()
 			connMock.
-				On("Cmd", ftpconnection.CommandPass, password).
+				On("Cmd", models.CommandPass, password).
 				Return(uid, nil).
 				Once()
 			connMock.
-				On("ReadResponse", ftpconnection.StatusLoggedIn).
-				Return(ftpconnection.StatusLoggedIn, "", nil).
+				On("ReadResponse", models.StatusLoggedIn).
+				Return(models.StatusLoggedIn, "", nil).
 				Once()
 			connMock.
-				On("Cmd", ftpconnection.CommandFeat).
+				On("Cmd", models.CommandFeat).
 				Return(uid, nil).
 				Once()
 			connMock.
-				On("ReadResponse", ftpconnection.StatusNoCheck).
-				Return(ftpconnection.StatusSystem, featureMsg, nil).
+				On("ReadResponse", models.StatusNoCheck).
+				Return(models.StatusSystem, featureMsg, nil).
 				Once()
 			connMock.
-				On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+				On("Cmd", models.CommandType, models.TransferTypeBinary).
 				Return(uid, nil).
 				Once()
 			connMock.
-				On("ReadResponse", ftpconnection.StatusCommandOK).
-				Return(ftpconnection.StatusCommandOK, "", nil).
+				On("ReadResponse", models.StatusCommandOK).
+				Return(models.StatusCommandOK, "", nil).
 				Once()
 			connMock.
-				On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+				On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 				Return(uid, nil).
 				Once()
 			connMock.
-				On("ReadResponse", ftpconnection.StatusNoCheck).
+				On("ReadResponse", models.StatusNoCheck).
 				Return(tc.utfStatusCode, "", nil).
 				Once()
 
@@ -96,51 +97,51 @@ func Test_ServerConnection_Login_WithTLSConfig_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Times(3)
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandProtectionBufferSize).
+		On("Cmd", models.CommandProtectionBufferSize).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandProtocol).
+		On("Cmd", models.CommandProtocol).
 		Return(uid, nil).
 		Once()
 
@@ -164,36 +165,36 @@ func Test_ServerConnection_Login_AlreadyLoggerInUser_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsgWithoutMLST, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsgWithoutMLST, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -208,28 +209,28 @@ func Test_ServerConnection_Login_FeatureCmdNotSupported_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusBadCommand, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusBadCommand, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -244,36 +245,36 @@ func Test_ServerConnection_Login_NoUTF8Feature_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsgWithoutUTF8, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsgWithoutUTF8, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -288,36 +289,36 @@ func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(
@@ -339,7 +340,7 @@ func Test_ServerConnection_Login_UserCmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -357,12 +358,12 @@ func Test_ServerConnection_Login_InvalidStatusFromUserCmd(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusBadArguments, "mock error", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusBadArguments, "mock error", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -380,15 +381,15 @@ func Test_ServerConnection_Login_PasswordError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -406,23 +407,23 @@ func Test_ServerConnection_Login_FeatureCmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -440,31 +441,31 @@ func Test_ServerConnection_Login_TypeCmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -482,39 +483,39 @@ func Test_ServerConnection_Login_UTF8CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -532,44 +533,44 @@ func Test_ServerConnection_Login_InvalidStatusFromUTF8Cmd(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusBadCommand, "mock error", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusBadCommand, "mock error", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -586,47 +587,47 @@ func Test_ServerConnection_Login_BufferSizeCmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandProtectionBufferSize).
+		On("Cmd", models.CommandProtectionBufferSize).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -652,51 +653,51 @@ func Test_ServerConnection_Login_ProtocolCmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusUserOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusUserOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandPass, password).
+		On("Cmd", models.CommandPass, password).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusLoggedIn).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusLoggedIn).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsg, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType, models.TransferTypeBinary).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Times(2)
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandProtectionBufferSize).
+		On("Cmd", models.CommandProtectionBufferSize).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandProtocol).
+		On("Cmd", models.CommandProtocol).
 		Return(uid, errors.New("mock error")).
 		Once()
 

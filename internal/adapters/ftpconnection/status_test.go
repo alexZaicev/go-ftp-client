@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -17,20 +18,20 @@ func Test_ServerConnection_Status_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandStatus).
+		On("Cmd", models.CommandStatus).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusSystem).
-		Return(ftpconnection.StatusSystem, statusMsg, nil).
+		On("ReadResponse", models.StatusSystem).
+		Return(models.StatusSystem, statusMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandSystem).
+		On("Cmd", models.CommandSystem).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusName).
-		Return(ftpconnection.StatusName, systemMsg, nil).
+		On("ReadResponse", models.StatusName).
+		Return(models.StatusName, systemMsg, nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -50,7 +51,7 @@ func Test_ServerConnection_Status_StatusCmdErr(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandStatus).
+		On("Cmd", models.CommandStatus).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -69,15 +70,15 @@ func Test_ServerConnection_Status_SystemCmdErr(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandStatus).
+		On("Cmd", models.CommandStatus).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusSystem).
-		Return(ftpconnection.StatusSystem, statusMsg, nil).
+		On("ReadResponse", models.StatusSystem).
+		Return(models.StatusSystem, statusMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandSystem).
+		On("Cmd", models.CommandSystem).
 		Return(uid, errors.New("mock error")).
 		Once()
 

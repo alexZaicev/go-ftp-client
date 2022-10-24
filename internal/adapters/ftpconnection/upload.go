@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
@@ -15,7 +16,7 @@ func (c *ServerConnection) Upload(ctx context.Context, options *connection.Uploa
 		return ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
-	conn, err := c.cmdWithDataConn(ctx, 0, CommandStore, options.Path)
+	conn, err := c.cmdWithDataConn(ctx, 0, models.CommandStore, options.Path)
 	if err != nil {
 		return ftperrors.NewInternalError("failed to open data transfer connection", err)
 	}

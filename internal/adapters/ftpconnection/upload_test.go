@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
@@ -49,32 +50,32 @@ func Test_ServerConnection_Upload_Success(t *testing.T) {
 	setMocksForLogin(connMock, false)
 	// mock setup for upload
 	connMock.
-		On("Cmd", fmt.Sprintf(ftpconnection.CommandPreTransfer, ftpconnection.CommandStore), remotePath).
+		On("Cmd", fmt.Sprintf(models.CommandPreTransfer, models.CommandStore), remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandExtendedPassiveMode).
+		On("Cmd", models.CommandExtendedPassiveMode).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusExtendedPassiveMode).
-		Return(ftpconnection.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
+		On("ReadResponse", models.StatusExtendedPassiveMode).
+		Return(models.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandStore, remotePath).
+		On("Cmd", models.CommandStore, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusAboutToSend, listMessage, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusAboutToSend, listMessage, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusClosingDataConnection).
-		Return(ftpconnection.StatusClosingDataConnection, "", nil).
+		On("ReadResponse", models.StatusClosingDataConnection).
+		Return(models.StatusClosingDataConnection, "", nil).
 		Once()
 
 	options := &connection.UploadOptions{
@@ -139,23 +140,23 @@ func Test_ServerConnection_Upload_CmdError(t *testing.T) {
 	setMocksForLogin(connMock, false)
 	// mock setup for upload
 	connMock.
-		On("Cmd", fmt.Sprintf(ftpconnection.CommandPreTransfer, ftpconnection.CommandStore), remotePath).
+		On("Cmd", fmt.Sprintf(models.CommandPreTransfer, models.CommandStore), remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandExtendedPassiveMode).
+		On("Cmd", models.CommandExtendedPassiveMode).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusExtendedPassiveMode).
-		Return(ftpconnection.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
+		On("ReadResponse", models.StatusExtendedPassiveMode).
+		Return(models.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandStore, remotePath).
+		On("Cmd", models.CommandStore, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -208,32 +209,32 @@ func Test_ServerConnection_Upload_CopyError(t *testing.T) {
 	setMocksForLogin(connMock, false)
 	// mock setup for upload
 	connMock.
-		On("Cmd", fmt.Sprintf(ftpconnection.CommandPreTransfer, ftpconnection.CommandStore), remotePath).
+		On("Cmd", fmt.Sprintf(models.CommandPreTransfer, models.CommandStore), remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandExtendedPassiveMode).
+		On("Cmd", models.CommandExtendedPassiveMode).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusExtendedPassiveMode).
-		Return(ftpconnection.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
+		On("ReadResponse", models.StatusExtendedPassiveMode).
+		Return(models.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandStore, remotePath).
+		On("Cmd", models.CommandStore, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusAboutToSend, listMessage, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusAboutToSend, listMessage, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusClosingDataConnection).
-		Return(ftpconnection.StatusClosingDataConnection, "", nil).
+		On("ReadResponse", models.StatusClosingDataConnection).
+		Return(models.StatusClosingDataConnection, "", nil).
 		Once()
 
 	options := &connection.UploadOptions{
@@ -285,32 +286,32 @@ func Test_ServerConnection_Upload_ConnCloseError(t *testing.T) {
 	setMocksForLogin(connMock, false)
 	// mock setup for upload
 	connMock.
-		On("Cmd", fmt.Sprintf(ftpconnection.CommandPreTransfer, ftpconnection.CommandStore), remotePath).
+		On("Cmd", fmt.Sprintf(models.CommandPreTransfer, models.CommandStore), remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandExtendedPassiveMode).
+		On("Cmd", models.CommandExtendedPassiveMode).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusExtendedPassiveMode).
-		Return(ftpconnection.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
+		On("ReadResponse", models.StatusExtendedPassiveMode).
+		Return(models.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandStore, remotePath).
+		On("Cmd", models.CommandStore, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusAboutToSend, listMessage, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusAboutToSend, listMessage, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusClosingDataConnection).
-		Return(ftpconnection.StatusClosingDataConnection, "", nil).
+		On("ReadResponse", models.StatusClosingDataConnection).
+		Return(models.StatusClosingDataConnection, "", nil).
 		Once()
 
 	options := &connection.UploadOptions{
@@ -362,32 +363,32 @@ func Test_ServerConnection_Upload_CheckConnShutError(t *testing.T) {
 	setMocksForLogin(connMock, false)
 	// mock setup for upload
 	connMock.
-		On("Cmd", fmt.Sprintf(ftpconnection.CommandPreTransfer, ftpconnection.CommandStore), remotePath).
+		On("Cmd", fmt.Sprintf(models.CommandPreTransfer, models.CommandStore), remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandExtendedPassiveMode).
+		On("Cmd", models.CommandExtendedPassiveMode).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusExtendedPassiveMode).
-		Return(ftpconnection.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
+		On("ReadResponse", models.StatusExtendedPassiveMode).
+		Return(models.StatusExtendedPassiveMode, extendedPassiveModeMessage, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandStore, remotePath).
+		On("Cmd", models.CommandStore, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusAboutToSend, listMessage, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusAboutToSend, listMessage, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusClosingDataConnection).
-		Return(ftpconnection.StatusBadCommand, "", errors.New("mock error")).
+		On("ReadResponse", models.StatusClosingDataConnection).
+		Return(models.StatusBadCommand, "", errors.New("mock error")).
 		Once()
 
 	options := &connection.UploadOptions{

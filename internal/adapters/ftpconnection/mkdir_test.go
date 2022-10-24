@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -32,28 +33,28 @@ func Test_ServerConnection_Mkdir_1dPath_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
+		On("Cmd", models.CommandChangeWorkDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusFileUnavailable, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusFileUnavailable, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandMakeDir, path).
+		On("Cmd", models.CommandMakeDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusPathCreated).
-		Return(ftpconnection.StatusPathCreated, "", nil).
+		On("ReadResponse", models.StatusPathCreated).
+		Return(models.StatusPathCreated, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, "/").
+		On("Cmd", models.CommandChangeWorkDir, "/").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusRequestedFileActionOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -70,36 +71,36 @@ func Test_ServerConnection_Mkdir_2dPath_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, "/foo").
+		On("Cmd", models.CommandChangeWorkDir, "/foo").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusFileUnavailable, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusFileUnavailable, "", nil).
 		Twice()
 	connMock.
-		On("Cmd", ftpconnection.CommandMakeDir, "/foo").
+		On("Cmd", models.CommandMakeDir, "/foo").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusPathCreated).
-		Return(ftpconnection.StatusPathCreated, "", nil).
+		On("ReadResponse", models.StatusPathCreated).
+		Return(models.StatusPathCreated, "", nil).
 		Twice()
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, "/foo/bar").
+		On("Cmd", models.CommandChangeWorkDir, "/foo/bar").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandMakeDir, "/foo/bar").
+		On("Cmd", models.CommandMakeDir, "/foo/bar").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, "/").
+		On("Cmd", models.CommandChangeWorkDir, "/").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusRequestedFileActionOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -116,12 +117,12 @@ func Test_ServerConnection_Mkdir_CheckDirExistsError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
+		On("Cmd", models.CommandChangeWorkDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusBadCommand, "mock error", errors.New("mock error")).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusBadCommand, "mock error", errors.New("mock error")).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -140,20 +141,20 @@ func Test_ServerConnection_Mkdir_MakeDirError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
+		On("Cmd", models.CommandChangeWorkDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusFileUnavailable, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusFileUnavailable, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandMakeDir, path).
+		On("Cmd", models.CommandMakeDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusPathCreated).
-		Return(ftpconnection.StatusBadCommand, "mock error", errors.New("mock error")).
+		On("ReadResponse", models.StatusPathCreated).
+		Return(models.StatusBadCommand, "mock error", errors.New("mock error")).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -172,23 +173,23 @@ func Test_ServerConnection_Mkdir_CdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, path).
+		On("Cmd", models.CommandChangeWorkDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusFileUnavailable, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusFileUnavailable, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandMakeDir, path).
+		On("Cmd", models.CommandMakeDir, path).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusPathCreated).
-		Return(ftpconnection.StatusPathCreated, "", nil).
+		On("ReadResponse", models.StatusPathCreated).
+		Return(models.StatusPathCreated, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, "/").
+		On("Cmd", models.CommandChangeWorkDir, "/").
 		Return(uid, errors.New("mock error")).
 		Once()
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/parsers"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/entities"
@@ -17,11 +18,11 @@ func (c *ServerConnection) List(ctx context.Context, options *connection.ListOpt
 		return nil, ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
 	}
 
-	cmd := CommandList
-	if c.features.supportMLST {
-		cmd = CommandListMachineReadable
+	cmd := models.CommandList
+	if c.features.SupportMLST {
+		cmd = models.CommandListMachineReadable
 	} else if options.ShowAll {
-		cmd = CommandListHidden
+		cmd = models.CommandListHidden
 	}
 
 	conn, err := c.cmdWithDataConn(ctx, 0, cmd, options.Path)
