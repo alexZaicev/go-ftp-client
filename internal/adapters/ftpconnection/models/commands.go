@@ -1,7 +1,6 @@
 package models
 
-type Command string
-
+// Command formats that are used to instruct FTP server to perform a certain task.
 const (
 	CommandQuit                 = "QUIT"
 	CommandAuthTLS              = "AUTH TLS"
@@ -10,7 +9,7 @@ const (
 	CommandFeat                 = "FEAT"
 	CommandProtectionBufferSize = "PBSZ 0"
 	CommandProtocol             = "PROT P"
-	CommandType                 = "TYPE %s"
+	CommandType                 = "TYPE I"
 	CommandOptions              = "OPTS %s %s"
 	CommandStatus               = "STAT"
 	CommandSystem               = "SYST"

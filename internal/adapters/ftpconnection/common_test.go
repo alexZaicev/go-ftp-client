@@ -98,7 +98,7 @@ func setMocksForLogin(connMock *mocks.TextConnection, useTLS bool) {
 		Return(models.StatusSystem, featureMsgWithoutMLST, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.

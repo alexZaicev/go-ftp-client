@@ -51,7 +51,7 @@ func (c *ServerConnection) updateFeatures() error {
 	c.features = models.NewServerFeatures(features)
 
 	// switch to binary mode
-	if _, _, cmdErr := c.cmd(models.StatusCommandOK, models.CommandType, models.TransferTypeBinary); cmdErr != nil {
+	if _, _, cmdErr := c.cmd(models.StatusCommandOK, models.CommandType); cmdErr != nil {
 		return ftperrors.NewInternalError("failed to set binary transfer mode", cmdErr)
 	}
 

@@ -67,7 +67,7 @@ func Test_ServerConnection_Login_Success(t *testing.T) {
 				Return(models.StatusSystem, featureMsg, nil).
 				Once()
 			connMock.
-				On("Cmd", models.CommandType, models.TransferTypeBinary).
+				On("Cmd", models.CommandType).
 				Return(uid, nil).
 				Once()
 			connMock.
@@ -121,7 +121,7 @@ func Test_ServerConnection_Login_WithTLSConfig_Success(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -181,7 +181,7 @@ func Test_ServerConnection_Login_AlreadyLoggerInUser_Success(t *testing.T) {
 		Return(models.StatusSystem, featureMsgWithoutMLST, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -269,7 +269,7 @@ func Test_ServerConnection_Login_NoUTF8Feature_Success(t *testing.T) {
 		Return(models.StatusSystem, featureMsgWithoutUTF8, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -313,7 +313,7 @@ func Test_ServerConnection_Login_UTF8Disabled_Success(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -465,7 +465,7 @@ func Test_ServerConnection_Login_TypeCmdError(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -507,7 +507,7 @@ func Test_ServerConnection_Login_UTF8CmdError(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -557,7 +557,7 @@ func Test_ServerConnection_Login_InvalidStatusFromUTF8Cmd(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -611,7 +611,7 @@ func Test_ServerConnection_Login_BufferSizeCmdError(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -677,7 +677,7 @@ func Test_ServerConnection_Login_ProtocolCmdError(t *testing.T) {
 		Return(models.StatusSystem, featureMsg, nil).
 		Once()
 	connMock.
-		On("Cmd", models.CommandType, models.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
