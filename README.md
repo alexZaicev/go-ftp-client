@@ -19,7 +19,7 @@ A simple CLI utility for executing FTP client without then need of installing ad
   - [x] Remove file/directory
   - [x] Move file/directory
   - [x] Upload file/directory
-  - [ ] Download file/directory
+  - [x] Download file/directory
   - [ ] TLS support
   - [ ] Support configuration file
   - [ ] Support env variables
