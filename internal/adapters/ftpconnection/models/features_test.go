@@ -1,10 +1,12 @@
 package models_test
 
 import (
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 )
 
 func Test_NewServerFeatures_Success(t *testing.T) {
@@ -23,7 +25,7 @@ func Test_NewServerFeatures_Success(t *testing.T) {
 
 	// assert
 	require.NotNil(t, sf)
-	
+
 	assert.True(t, sf.SupportMLST)
 	assert.True(t, sf.SupportMDTM)
 	assert.True(t, sf.SupportMFMT)
