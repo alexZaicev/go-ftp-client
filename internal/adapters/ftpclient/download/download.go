@@ -1,4 +1,4 @@
-package remove
+package download
 
 import (
 	"context"
@@ -7,27 +7,30 @@ import (
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
+	"github.com/alexZaicev/go-ftp-client/internal/domain/repositories"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
-	useCase "github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
+	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-type CmdRemoveInput struct {
+type CmdDownloadInput struct {
 	Address  string
 	User     string
 	Password string
 	Verbose  bool
 	Timeout  time.Duration
 
-	Path string
+	RemotePath string
+	Path       string
 }
 
 type Dependencies struct {
 	Connector ftpclient.Connector
-	UseCase   useCase.RemoveUseCase
+	FileStore repositories.FileStore
+	UseCase   ftp.DownloadUseCase
 	OutWriter io.Writer
 }
 
-func PerformRemove(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdRemoveInput) (err error) {
+func PerformDownload(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdDownloadInput) (err error) {
 	options := &ftpclient.ConnectorOptions{
 		Address:  input.Address,
 		User:     input.User,
@@ -49,17 +52,19 @@ func PerformRemove(ctx context.Context, logger logging.Logger, deps *Dependencie
 		}
 	}(conn)
 
-	useCaseRepos := &useCase.RemoveRepos{
+	downloadUseCaseRepos := &ftp.DownloadRepos{
 		Logger:     logger,
 		Connection: conn,
+		FileStore:  deps.FileStore,
 	}
 
-	useCaseInput := &useCase.RemoveInput{
-		Path: input.Path,
+	downloadUseCaseInput := &ftp.DownloadInput{
+		RemotePath: input.RemotePath,
+		Path:       input.Path,
 	}
 
-	if useCaseErr := deps.UseCase.Execute(ctx, useCaseRepos, useCaseInput); useCaseErr != nil {
-		return useCaseErr
+	if downloadErr := deps.UseCase.Execute(ctx, downloadUseCaseRepos, downloadUseCaseInput); downloadErr != nil {
+		return downloadErr
 	}
 
 	logger.Info("OK!")

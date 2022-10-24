@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftpErrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -19,12 +20,12 @@ func Test_ServerConnection_RemoveFile_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandRemoveFile, remotePath).
+		On("Cmd", models.CommandRemoveFile, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusRequestedFileActionOK).
-		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
+		On("ReadResponse", models.StatusRequestedFileActionOK).
+		Return(models.StatusRequestedFileActionOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -62,7 +63,7 @@ func Test_ServerConnection_RemoveFile_CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandRemoveFile, remotePath).
+		On("Cmd", models.CommandRemoveFile, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -85,12 +86,12 @@ func Test_ServerConnection_RemoveDir_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandRemoveDir, remotePath).
+		On("Cmd", models.CommandRemoveDir, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusRequestedFileActionOK).
-		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
+		On("ReadResponse", models.StatusRequestedFileActionOK).
+		Return(models.StatusRequestedFileActionOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -128,7 +129,7 @@ func Test_ServerConnection_RemoveDir_CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandRemoveDir, remotePath).
+		On("Cmd", models.CommandRemoveDir, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 

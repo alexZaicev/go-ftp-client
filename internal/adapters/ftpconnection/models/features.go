@@ -1,0 +1,35 @@
+package models
+
+const (
+	FeatureMLST = "MLST"
+	FeatureMDTM = "MDTM"
+	FeatureMFMT = "MFMT"
+	FeaturePRET = "PRET"
+	FeatureUTF8 = "UTF8"
+	FeatureEPSV = "EPSV"
+)
+
+type ServerFeatures struct {
+	SupportMLST bool
+	SupportMDTM bool
+	SupportMFMT bool
+	SupportPRET bool
+	SupportEPSV bool
+	SupportUTF8 bool
+}
+
+func NewServerFeatures(featureMap map[string]string) *ServerFeatures {
+	sf := &ServerFeatures{}
+	// FIXME: add support for MLST
+	// if _, ok := featureMap[FeatureMLST]; ok && !c.dialOptions.disableMLST {
+	//	c.features.supportMLST = true
+	// }
+	// c.mdtmCanWrite = c.mdtmSupported && c.dialOptions.writingMDTM
+	_, sf.SupportMLST = featureMap[FeatureMLST]
+	_, sf.SupportPRET = featureMap[FeaturePRET]
+	_, sf.SupportMDTM = featureMap[FeatureMDTM]
+	_, sf.SupportMFMT = featureMap[FeatureMFMT]
+	_, sf.SupportEPSV = featureMap[FeatureEPSV]
+	_, sf.SupportUTF8 = featureMap[FeatureUTF8]
+	return sf
+}

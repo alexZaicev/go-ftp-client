@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
@@ -34,7 +35,7 @@ func (c *ServerConnection) Mkdir(path string) error {
 				return err
 			}
 
-			_, _, mkdErr := c.cmd(StatusPathCreated, CommandMakeDir, pathToCreate)
+			_, _, mkdErr := c.cmd(models.StatusPathCreated, models.CommandMakeDir, pathToCreate)
 			if mkdErr != nil {
 				return ftperrors.NewInternalError("failed to create directory", mkdErr)
 			}

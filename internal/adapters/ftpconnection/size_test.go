@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -17,12 +18,12 @@ func Test_ServerConnection_Size_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandSize, remotePath).
+		On("Cmd", models.CommandSize, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusFile).
-		Return(ftpconnection.StatusFile, "1024", nil).
+		On("ReadResponse", models.StatusFile).
+		Return(models.StatusFile, "1024", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -38,7 +39,7 @@ func Test_ServerConnection_Size_CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandSize, remotePath).
+		On("Cmd", models.CommandSize, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -57,12 +58,12 @@ func Test_ServerConnection_Size_ParseError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandSize, remotePath).
+		On("Cmd", models.CommandSize, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusFile).
-		Return(ftpconnection.StatusFile, "no-a-number", nil).
+		On("ReadResponse", models.StatusFile).
+		Return(models.StatusFile, "no-a-number", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)

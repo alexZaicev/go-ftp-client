@@ -10,48 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/parsers"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
-)
-
-const (
-	CommandQuit                 = "QUIT"
-	CommandAuthTLS              = "AUTH TLS"
-	CommandUser                 = "USER %s"
-	CommandPass                 = "PASS %s"
-	CommandFeat                 = "FEAT"
-	CommandProtectionBufferSize = "PBSZ 0"
-	CommandProtocol             = "PROT P"
-	CommandType                 = "TYPE %s"
-	CommandOptions              = "OPTS %s %s"
-	CommandStatus               = "STAT"
-	CommandSystem               = "SYST"
-	CommandList                 = "LIST %s"
-	CommandListHidden           = "LIST -a %s"
-	CommandPreTransfer          = "PRET %s"
-	CommandPassive              = "PASV"
-	CommandExtendedPassiveMode  = "EPSV"
-	CommandRestartTransfer      = "REST %d"
-	CommandListMachineReadable  = "MLSD %s"
-	CommandStore                = "STOR %s"
-	CommandMakeDir              = "MKD %s"
-	CommandChangeWorkDir        = "CWD %s"
-	CommandSize                 = "SIZE %s"
-	CommandRemoveFile           = "DELE %s"
-	CommandRemoveDir            = "RMD %s"
-	CommandRenameFrom           = "RNFR %s"
-	CommandRenameTo             = "RNTO %s"
-
-	Off = "OFF"
-	On  = "ON"
-)
-
-type TransferType string
-
-const (
-	TransferTypeASCII  = "A"
-	TransferTypeBinary = "I"
 )
 
 const (
@@ -94,7 +56,7 @@ type ServerConnection struct {
 
 	parser parsers.Parser
 
-	features *serverFeatures
+	features *models.ServerFeatures
 
 	disableUTF8   bool
 	disableEPSV   bool
@@ -131,7 +93,7 @@ func NewConnection(
 		tcpConn:     conn,
 		conn:        textConn,
 		parser:      parsers.NewGenericListParser(),
-		features:    &serverFeatures{},
+		features:    &models.ServerFeatures{},
 		shutTimeout: defaultShutTimeout,
 	}
 
@@ -159,8 +121,8 @@ func (c *ServerConnection) cmdWithDataConn(
 	args ...any,
 ) (conn io.ReadWriteCloser, err error) {
 	// For more information on PRET see: https://datatracker.ietf.org/doc/html/draft-dd-pret-00
-	if c.features.supportPRET {
-		_, _, cmdErr := c.cmd(StatusCommandOK, fmt.Sprintf(CommandPreTransfer, format), args...)
+	if c.features.SupportPRET {
+		_, _, cmdErr := c.cmd(models.StatusCommandOK, fmt.Sprintf(models.CommandPreTransfer, format), args...)
 		if cmdErr != nil {
 			return nil, ftperrors.NewInternalError("failed to issue pre-transfer configuration", cmdErr)
 		}
@@ -172,7 +134,7 @@ func (c *ServerConnection) cmdWithDataConn(
 	}
 
 	if offset != 0 {
-		if _, _, cmdErr := c.cmd(StatusRequestFilePending, CommandRestartTransfer, offset); cmdErr != nil {
+		if _, _, cmdErr := c.cmd(models.StatusRequestFilePending, models.CommandRestartTransfer, offset); cmdErr != nil {
 			defer func() {
 				if closeErr := tcpConn.Close(); closeErr != nil {
 					err = closeErr
@@ -182,7 +144,7 @@ func (c *ServerConnection) cmdWithDataConn(
 		}
 	}
 
-	code, msg, err := c.cmd(StatusNoCheck, format, args...)
+	code, msg, err := c.cmd(models.StatusNoCheck, format, args...)
 	if err != nil {
 		defer func() {
 			if closeErr := tcpConn.Close(); closeErr != nil {
@@ -192,7 +154,7 @@ func (c *ServerConnection) cmdWithDataConn(
 		return nil, err
 	}
 
-	if code != StatusAlreadyOpen && code != StatusAboutToSend {
+	if code != models.StatusAlreadyOpen && code != models.StatusAboutToSend {
 		defer func() {
 			if closeErr := tcpConn.Close(); closeErr != nil {
 				err = closeErr
@@ -211,7 +173,7 @@ func (c *ServerConnection) cmdWithDataConn(
 // future data connection.
 func (c *ServerConnection) setPassiveMode() (string, error) {
 	// Response of the command: Entering Passive Mode (h1,h2,h3,h4,p1,p2).
-	_, msg, err := c.cmd(StatusPassiveMode, CommandPassive)
+	_, msg, err := c.cmd(models.StatusPassiveMode, models.CommandPassive)
 	if err != nil {
 		return "", ftperrors.NewInternalError("failed to set passive mode", err)
 	}
@@ -247,7 +209,7 @@ func (c *ServerConnection) setPassiveMode() (string, error) {
 // setPassiveMode function sets server into extended passive mode retrieving port for
 // future data connection.
 func (c *ServerConnection) setExtendedPassiveMode() (string, error) {
-	_, msg, err := c.cmd(StatusExtendedPassiveMode, CommandExtendedPassiveMode)
+	_, msg, err := c.cmd(models.StatusExtendedPassiveMode, models.CommandExtendedPassiveMode)
 	if err != nil {
 		return "", ftperrors.NewInternalError("failed to set extended passive mode", err)
 	}
@@ -272,7 +234,7 @@ func (c *ServerConnection) setExtendedPassiveMode() (string, error) {
 // getDataConnPort function retrieves data connection port by setting server into extended or standard
 // passive mode.
 func (c *ServerConnection) getDataConnPort() (string, error) {
-	if !c.disableEPSV && c.features.supportEPSV {
+	if !c.disableEPSV && c.features.SupportEPSV {
 		port, err := c.setExtendedPassiveMode()
 		if err != nil {
 			return "", err
@@ -303,7 +265,7 @@ func (c *ServerConnection) checkDataConnShut() error {
 			return err
 		}
 	}
-	_, _, err := c.conn.ReadResponse(StatusClosingDataConnection)
+	_, _, err := c.conn.ReadResponse(models.StatusClosingDataConnection)
 	return err
 }
 

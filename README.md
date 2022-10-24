@@ -19,8 +19,15 @@ A simple CLI utility for executing FTP client without then need of installing ad
   - [x] Remove file/directory
   - [x] Move file/directory
   - [x] Upload file/directory
-  - [ ] Download file/directory
+  - [x] Download file/directory
   - [ ] TLS support
   - [ ] Support configuration file
   - [ ] Support env variables
   - [ ] Add repos/input validator functions
+  - Entry Parsers:
+    - [ ] Implement missing test cases and features in UNIX and RFC3659 parsers
+    - [ ] MsDOS entry parser
+    - [ ] Hosted FTP entry parser
+  - [ ] Missing functional tests
+  - [ ] Support missing FTP server features upon discovery
+  - [ ] Mechanism to disable features within config

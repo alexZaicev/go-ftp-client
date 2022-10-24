@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -19,12 +20,12 @@ func Test_ServerConnection_Cd_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
+		On("Cmd", models.CommandChangeWorkDir, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusRequestedFileActionOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusRequestedFileActionOK, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -39,12 +40,12 @@ func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
+		On("Cmd", models.CommandChangeWorkDir, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusFileUnavailable, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusFileUnavailable, "", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)
@@ -62,7 +63,7 @@ func Test_ServerConnection_Cd_CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
+		On("Cmd", models.CommandChangeWorkDir, remotePath).
 		Return(uid, errors.New("mock error")).
 		Once()
 
@@ -80,12 +81,12 @@ func Test_ServerConnection_Cd_InvalidStatus(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandChangeWorkDir, remotePath).
+		On("Cmd", models.CommandChangeWorkDir, remotePath).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandNotImplemented, "mock error", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandNotImplemented, "mock error", nil).
 		Once()
 
 	serverConn, err := ftpconnection.NewConnection(host, dialer, tcpConn, connMock)

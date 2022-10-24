@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
@@ -17,11 +18,11 @@ func Test_ServerConnection_EnableExplicitTLSMode_Success(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandAuthTLS).
+		On("Cmd", models.CommandAuthTLS).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusAuthOK).
+		On("ReadResponse", models.StatusAuthOK).
 		Return(0, "", nil).
 		Once()
 
@@ -37,11 +38,11 @@ func Test_ServerConnection_EnableExplicitTLSMode_CmdError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandAuthTLS).
+		On("Cmd", models.CommandAuthTLS).
 		Return(uid, errors.New("mock error")).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandQuit).
+		On("Cmd", models.CommandQuit).
 		Return(uid, nil).
 		Once()
 	connMock.
@@ -63,11 +64,11 @@ func Test_ServerConnection_EnableExplicitTLSMode_StopError(t *testing.T) {
 	dialer := ftpConnectionMocks.NewDialer(t)
 	connMock := ftpConnectionMocks.NewTextConnection(t)
 	connMock.
-		On("Cmd", ftpconnection.CommandAuthTLS).
+		On("Cmd", models.CommandAuthTLS).
 		Return(uid, errors.New("mock error")).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandQuit).
+		On("Cmd", models.CommandQuit).
 		Return(uid, nil).
 		Once()
 	connMock.

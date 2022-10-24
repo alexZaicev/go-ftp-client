@@ -54,6 +54,9 @@ func NewGfcCommand() (*cobra.Command, error) {
 	if err := AddMoveCommand(rootCMD); err != nil {
 		return nil, errors.NewInternalError("failed to setup move command", err)
 	}
+	if err := AddDownloadCommand(rootCMD); err != nil {
+		return nil, errors.NewInternalError("failed to setup download command", err)
+	}
 
 	return rootCMD, nil
 }

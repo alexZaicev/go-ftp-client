@@ -17,7 +17,7 @@ import (
 func AddRemoveCommand(rootCMD *cobra.Command) error {
 	removeCMD := &cobra.Command{
 		Use:   "rm",
-		Short: "Remove file or directory",
+		Short: "Remove file or directory.",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := context.Background()
 
@@ -83,22 +83,16 @@ func parseRemoveFlags(flagSet *pflag.FlagSet, args []string) (*remove.CmdRemoveI
 		return nil, err
 	}
 
-	recursive, err := flagSet.GetBool(ArgRecursive)
-	if err != nil {
-		return nil, err
-	}
-
 	if len(args) != 1 {
 		return nil, ftperrors.NewInvalidArgumentError("args", "should contain exactly one valid path")
 	}
 
 	return &remove.CmdRemoveInput{
-		Address:   address,
-		User:      user,
-		Password:  pwd,
-		Verbose:   verbose,
-		Timeout:   defaultConnectionTimeout,
-		Path:      args[0],
-		Recursive: recursive,
+		Address:  address,
+		User:     user,
+		Password: pwd,
+		Verbose:  verbose,
+		Timeout:  defaultConnectionTimeout,
+		Path:     args[0],
 	}, nil
 }

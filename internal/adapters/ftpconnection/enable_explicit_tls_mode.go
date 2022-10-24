@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"net/textproto"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
 // EnableExplicitTLSMode function enables TLS modes on established TCP connection.
 func (c *ServerConnection) EnableExplicitTLSMode() (err error) {
-	if _, _, readErr := c.cmd(StatusAuthOK, CommandAuthTLS); readErr != nil {
+	if _, _, readErr := c.cmd(models.StatusAuthOK, models.CommandAuthTLS); readErr != nil {
 		defer func() {
 			if stopErr := c.Stop(); stopErr != nil {
 				err = stopErr

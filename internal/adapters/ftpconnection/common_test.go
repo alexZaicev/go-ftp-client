@@ -1,15 +1,16 @@
 package ftpconnection_test
 
 import (
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpconnection/models"
 	mocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
 
 const (
 	uid uint = 1
 
-	remotePath    = "/foo/bar/baz"
-	newRemotePath = "/baz/bar/foo"
+	remotePath       = "/foo/bar/baz"
+	remoteParentPath = "/foo/bar/"
+	newRemotePath    = "/baz/bar/foo"
 
 	host     = "ftp-dev-client"
 	user     = "user01"
@@ -76,54 +77,55 @@ const (
 	passiveModeMessage         = "Entering Passive Mode (10,0,0,1,82,111)"
 	listMessage                = "Here comes the directory listing."
 	entryFileMessage           = "-rw-r--r--    1 ftp      ftp           187 Sep 16 14:34 file-1.txt"
+	entryDirMessage            = "drwxrw-rw-    1 ftp      ftp           187 Sep 16 14:34 baz"
 )
 
 func setMocksForLogin(connMock *mocks.TextConnection, useTLS bool) {
 	connMock.
-		On("Cmd", ftpconnection.CommandUser, user).
+		On("Cmd", models.CommandUser, user).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusLoggedIn, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusLoggedIn, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandFeat).
+		On("Cmd", models.CommandFeat).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusSystem, featureMsgWithoutMLST, nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusSystem, featureMsgWithoutMLST, nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandType, ftpconnection.TransferTypeBinary).
+		On("Cmd", models.CommandType).
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusCommandOK).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusCommandOK).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 	connMock.
-		On("Cmd", ftpconnection.CommandOptions, ftpconnection.FeatureUTF8, ftpconnection.On).
+		On("Cmd", models.CommandOptions, models.FeatureUTF8, "ON").
 		Return(uid, nil).
 		Once()
 	connMock.
-		On("ReadResponse", ftpconnection.StatusNoCheck).
-		Return(ftpconnection.StatusCommandOK, "", nil).
+		On("ReadResponse", models.StatusNoCheck).
+		Return(models.StatusCommandOK, "", nil).
 		Once()
 
 	if useTLS {
 		connMock.
-			On("Cmd", ftpconnection.CommandProtectionBufferSize).
+			On("Cmd", models.CommandProtectionBufferSize).
 			Return(uid, nil).
 			Once()
 		connMock.
-			On("Cmd", ftpconnection.CommandProtocol).
+			On("Cmd", models.CommandProtocol).
 			Return(uid, nil).
 			Once()
 		connMock.
-			On("ReadResponse", ftpconnection.StatusCommandOK).
-			Return(ftpconnection.StatusCommandOK, "", nil).
+			On("ReadResponse", models.StatusCommandOK).
+			Return(models.StatusCommandOK, "", nil).
 			Twice()
 	}
 }
