@@ -172,7 +172,7 @@ func Test_ServerConnection_Upload_CmdError(t *testing.T) {
 	require.NoError(t, err)
 
 	err = serverConn.Upload(ctx, options)
-	require.EqualError(t, err, "an internal error occurred: failed to upload file(s)")
+	require.EqualError(t, err, "an internal error occurred: failed to open data transfer connection")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.EqualError(t, errors.Unwrap(err), "mock error")
 }
@@ -249,7 +249,7 @@ func Test_ServerConnection_Upload_CopyError(t *testing.T) {
 	require.NoError(t, err)
 
 	err = serverConn.Upload(ctx, options)
-	require.EqualError(t, err, "an internal error occurred: failed to upload file(s)")
+	require.EqualError(t, err, "an internal error occurred: failed to upload file")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.EqualError(t, errors.Unwrap(err), "1 error occurred:\n\t* short write\n\n")
 }
@@ -326,7 +326,7 @@ func Test_ServerConnection_Upload_ConnCloseError(t *testing.T) {
 	require.NoError(t, err)
 
 	err = serverConn.Upload(ctx, options)
-	require.EqualError(t, err, "an internal error occurred: failed to upload file(s)")
+	require.EqualError(t, err, "an internal error occurred: failed to upload file")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.EqualError(t, errors.Unwrap(err), "1 error occurred:\n\t* mock error\n\n")
 }
@@ -403,7 +403,7 @@ func Test_ServerConnection_Upload_CheckConnShutError(t *testing.T) {
 	require.NoError(t, err)
 
 	err = serverConn.Upload(ctx, options)
-	require.EqualError(t, err, "an internal error occurred: failed to upload file(s)")
+	require.EqualError(t, err, "an internal error occurred: failed to upload file")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.EqualError(t, errors.Unwrap(err), "1 error occurred:\n\t* mock error\n\n")
 }

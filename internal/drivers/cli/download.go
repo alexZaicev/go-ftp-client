@@ -2,26 +2,27 @@ package cli
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/filestore"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
-	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/move"
+	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/download"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-// nolint:dupl // similar to AddStatusCommand
-func AddMoveCommand(rootCMD *cobra.Command) error {
+func AddDownloadCommand(rootCMD *cobra.Command) error {
 	removeCMD := &cobra.Command{
-		Use:   "mv",
-		Short: "Move file or directory.",
+		Use:   "download",
+		Short: "Download file(s) from the server.",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := context.Background()
 
-			input, err := parseMoveFlags(cmd.Flags(), args)
+			input, err := parseDownloadFlags(cmd.Flags(), args)
 			if err != nil {
 				return err
 			}
@@ -35,13 +36,14 @@ func AddMoveCommand(rootCMD *cobra.Command) error {
 				return ftperrors.NewInternalError("failed to setup logger", err)
 			}
 
-			dependencies := &move.Dependencies{
+			dependencies := &download.Dependencies{
 				Connector: ftpclient.NewConnector(),
-				UseCase:   &ftp.Move{},
+				UseCase:   &ftp.Download{},
+				FileStore: &filestore.FileStore{},
 				OutWriter: cmd.OutOrStdout(),
 			}
 
-			err = move.PerformMove(ctx, logger, dependencies, input)
+			err = download.PerformDownload(ctx, logger, dependencies, input)
 			return
 		},
 	}
@@ -56,13 +58,11 @@ func AddMoveCommand(rootCMD *cobra.Command) error {
 
 	removeCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
 
-	removeCMD.Flags().BoolP(ArgRecursive, ArgRecursiveShort, false, "Recursive")
-
 	rootCMD.AddCommand(removeCMD)
 	return nil
 }
 
-func parseMoveFlags(flagSet *pflag.FlagSet, args []string) (*move.CmdMoveInput, error) {
+func parseDownloadFlags(flagSet *pflag.FlagSet, args []string) (*download.CmdDownloadInput, error) {
 	address, err := flagSet.GetString(ArgAddress)
 	if err != nil {
 		return nil, err
@@ -85,16 +85,21 @@ func parseMoveFlags(flagSet *pflag.FlagSet, args []string) (*move.CmdMoveInput, 
 
 	// nolint:gomnd // expecting 2 args for command
 	if len(args) != 2 {
-		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid from and to paths")
+		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid remote file and download paths")
 	}
 
-	return &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		OldPath:  args[0],
-		NewPath:  args[1],
+	filePath, err := filepath.Abs(args[1])
+	if err != nil {
+		return nil, ftperrors.NewInvalidArgumentError("args", err.Error())
+	}
+
+	return &download.CmdDownloadInput{
+		Address:    address,
+		User:       user,
+		Password:   pwd,
+		Verbose:    verbose,
+		Timeout:    defaultConnectionTimeout,
+		RemotePath: args[0],
+		Path:       filePath,
 	}, nil
 }

@@ -31,6 +31,29 @@ func (_m *Connection) Cd(path string) error {
 	return r0
 }
 
+// Download provides a mock function with given fields: ctx, path
+func (_m *Connection) Download(ctx context.Context, path string) ([]byte, error) {
+	ret := _m.Called(ctx, path)
+
+	var r0 []byte
+	if rf, ok := ret.Get(0).(func(context.Context, string) []byte); ok {
+		r0 = rf(ctx, path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnableExplicitTLSMode provides a mock function with given fields:
 func (_m *Connection) EnableExplicitTLSMode() error {
 	ret := _m.Called()
@@ -43,6 +66,27 @@ func (_m *Connection) EnableExplicitTLSMode() error {
 	}
 
 	return r0
+}
+
+// IsDir provides a mock function with given fields: ctx, path
+func (_m *Connection) IsDir(ctx context.Context, path string) (bool, error) {
+	ret := _m.Called(ctx, path)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, path)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // List provides a mock function with given fields: ctx, options

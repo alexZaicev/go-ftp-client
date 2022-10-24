@@ -42,6 +42,7 @@ const (
 	CommandRemoveDir            = "RMD %s"
 	CommandRenameFrom           = "RNFR %s"
 	CommandRenameTo             = "RNTO %s"
+	CommandRetrieve             = "RETR %s"
 
 	Off = "OFF"
 	On  = "ON"

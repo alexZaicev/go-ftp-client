@@ -8,8 +8,9 @@ import (
 const (
 	uid uint = 1
 
-	remotePath    = "/foo/bar/baz"
-	newRemotePath = "/baz/bar/foo"
+	remotePath       = "/foo/bar/baz"
+	remoteParentPath = "/foo/bar/"
+	newRemotePath    = "/baz/bar/foo"
 
 	host     = "ftp-dev-client"
 	user     = "user01"
@@ -76,6 +77,7 @@ const (
 	passiveModeMessage         = "Entering Passive Mode (10,0,0,1,82,111)"
 	listMessage                = "Here comes the directory listing."
 	entryFileMessage           = "-rw-r--r--    1 ftp      ftp           187 Sep 16 14:34 file-1.txt"
+	entryDirMessage            = "drwxrw-rw-    1 ftp      ftp           187 Sep 16 14:34 baz"
 )
 
 func setMocksForLogin(connMock *mocks.TextConnection, useTLS bool) {

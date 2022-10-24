@@ -3,7 +3,6 @@ package ftp_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -18,90 +17,21 @@ import (
 	connectionMocks "github.com/alexZaicev/go-ftp-client/mocks/domain/connection"
 )
 
-const (
-	path = "foo"
-)
-
-func Test_Remove_Execute_RemoveFile_Success(t *testing.T) {
-	testCases := []struct {
-		name      string
-		recursive bool
-	}{
-		{
-			name:      "remove file non-recursive",
-			recursive: false,
-		},
-		{
-			name:      "remove file recursive",
-			recursive: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// arrange
-			ctx := context.Background()
-
-			logger := assertlogging.NewLogger(t)
-
-			entries := []*entities.Entry{
-				newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-				newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-				newEntry(t, entities.EntryTypeFile, path, 167, "2022-01-12 16:23"),
-			}
-
-			connMock := connectionMocks.NewConnection(t)
-			connMock.
-				On("List", ctx, &connection.ListOptions{
-					Path:    "",
-					ShowAll: true,
-				}).
-				Return(entries, nil).
-				Once()
-			connMock.On("RemoveFile", path).Return(nil).Once()
-
-			useCaseRepos := &ftp.RemoveRepos{
-				Logger:     logger,
-				Connection: connMock,
-			}
-
-			useCaseInput := &ftp.RemoveInput{
-				Path:      path,
-				Recursive: tc.recursive,
-			}
-
-			useCase := ftp.Remove{}
-
-			// act
-			err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
-
-			// assert
-			assert.NoError(t, err)
-		})
-	}
-}
-
-func Test_Remove_Execute_RemoveDir_Success(t *testing.T) {
+func Test_Remove_Execute_File_Success(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 
-	entries := []*entities.Entry{
-		newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
-	}
-
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    "",
-			ShowAll: true,
-		}).
-		Return(entries, nil).
+		On("IsDir", ctx, remotePathNoDir).
+		Return(false, nil).
 		Once()
-	connMock.On("RemoveDir", path).Return(nil).Once()
+	connMock.
+		On("RemoveFile", remotePathNoDir).
+		Return(nil).
+		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
 		Logger:     logger,
@@ -109,7 +39,7 @@ func Test_Remove_Execute_RemoveDir_Success(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path: path,
+		Path: remotePathNoDir,
 	}
 
 	useCase := ftp.Remove{}
@@ -121,7 +51,7 @@ func Test_Remove_Execute_RemoveDir_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_Remove_Execute_RemoveDirRecursively_Success(t *testing.T) {
+func Test_Remove_Execute_Directory_Success(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -129,51 +59,51 @@ func Test_Remove_Execute_RemoveDirRecursively_Success(t *testing.T) {
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
+		On("IsDir", ctx, remoteDirPath).
+		Return(true, nil).
+		Once()
+	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    "",
+			Path:    remoteDirPath,
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeLink, "link-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeDir, "dir-1", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    path,
+			Path:    filepath.Join(remoteDirPath, "dir-1"),
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeLink, "link-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "dir-1", 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-2", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    filepath.Join(path, "dir-1"),
-			ShowAll: true,
-		}).
-		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, ".", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "..", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		}, nil).
-		Once()
-
-	connMock.On("RemoveFile", filepath.Join(path, "file-1")).
+		On("RemoveDir", remoteDirPath).
 		Return(nil).
 		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "link-1")).
+	connMock.
+		On("RemoveDir", filepath.Join(remoteDirPath, "dir-1")).
 		Return(nil).
 		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "dir-1", "file-2")).
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "file-1")).
 		Return(nil).
 		Once()
-
-	connMock.On("RemoveDir", filepath.Join(path, "dir-1")).
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "link-1")).
 		Return(nil).
 		Once()
-	connMock.On("RemoveDir", path).
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "dir-1", "file-2")).
 		Return(nil).
 		Once()
 
@@ -183,8 +113,7 @@ func Test_Remove_Execute_RemoveDirRecursively_Success(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path:      path,
-		Recursive: true,
+		Path: remoteDirPath,
 	}
 
 	useCase := ftp.Remove{}
@@ -196,23 +125,20 @@ func Test_Remove_Execute_RemoveDirRecursively_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_Remove_Execute_ListError(t *testing.T) {
+func Test_Remove_Execute_IsDirError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 	logger.
-		ExpectError("failed to list directory").
-		WithField("path", assertlogging.Equal("/")).
-		WithError(assertlogging.EqualError("mock error"))
+		ExpectError("failed to check if entry is a directory").
+		WithError(assertlogging.EqualError("mock error")).
+		WithField("remote-path", assertlogging.Equal(remotePathNoDir))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    "",
-			ShowAll: true,
-		}).
-		Return(nil, errors.New("mock error")).
+		On("IsDir", ctx, remotePathNoDir).
+		Return(false, errors.New("mock error")).
 		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
@@ -221,7 +147,7 @@ func Test_Remove_Execute_ListError(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path: path,
+		Path: remotePathNoDir,
 	}
 
 	useCase := ftp.Remove{}
@@ -230,80 +156,30 @@ func Test_Remove_Execute_ListError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 
 	// assert
-	require.EqualError(t, err, "an internal error occurred: failed to list directory")
+	require.EqualError(t, err, "an internal error occurred: failed to check if entry is a directory")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_Remove_Execute_NotFoundError(t *testing.T) {
-	// arrange
-	ctx := context.Background()
-
-	logger := assertlogging.NewLogger(t)
-	logger.
-		ExpectInfo(fmt.Sprintf("entry not found under [%s] path", path)).
-		WithField("path", assertlogging.Equal(path))
-
-	entries := []*entities.Entry{
-		newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-	}
-
-	connMock := connectionMocks.NewConnection(t)
-	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    "",
-			ShowAll: true,
-		}).
-		Return(entries, nil).
-		Once()
-
-	useCaseRepos := &ftp.RemoveRepos{
-		Logger:     logger,
-		Connection: connMock,
-	}
-
-	useCaseInput := &ftp.RemoveInput{
-		Path: path,
-	}
-
-	useCase := ftp.Remove{}
-
-	// act
-	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
-
-	// assert
-	require.EqualError(t, err, fmt.Sprintf("not found error occurred: entry not found under [%s] path", path))
-	assert.IsType(t, ftperrors.NotFoundErrorType, err)
-	assert.NoError(t, errors.Unwrap(err))
-}
-
-// nolint:dupl // similar to Test_Remove_Execute_RemoveDir_Error
-func Test_Remove_Execute_RemoveFile_Error(t *testing.T) {
+func Test_Remove_Execute_RemoveFileError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 	logger.
 		ExpectError("failed to remove file").
-		WithField("path", assertlogging.Equal(path)).
-		WithError(assertlogging.EqualError("mock error"))
-
-	entries := []*entities.Entry{
-		newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeFile, path, 167, "2022-01-12 16:23"),
-	}
+		WithError(assertlogging.EqualError("mock error")).
+		WithField("remote-path", assertlogging.Equal(remotePathNoDir))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    "",
-			ShowAll: true,
-		}).
-		Return(entries, nil).
+		On("IsDir", ctx, remotePathNoDir).
+		Return(false, nil).
 		Once()
-	connMock.On("RemoveFile", path).Return(errors.New("mock error")).Once()
+	connMock.
+		On("RemoveFile", remotePathNoDir).
+		Return(errors.New("mock error")).
+		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
 		Logger:     logger,
@@ -311,7 +187,7 @@ func Test_Remove_Execute_RemoveFile_Error(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path: path,
+		Path: remotePathNoDir,
 	}
 
 	useCase := ftp.Remove{}
@@ -325,79 +201,48 @@ func Test_Remove_Execute_RemoveFile_Error(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-// nolint:dupl // similar to Test_Remove_Execute_RemoveFile_Error
-func Test_Remove_Execute_RemoveDir_Error(t *testing.T) {
-	// arrange
-	ctx := context.Background()
-
-	logger := assertlogging.NewLogger(t)
-	logger.
-		ExpectError("failed to remove directory").
-		WithField("path", assertlogging.Equal(path)).
-		WithError(assertlogging.EqualError("mock error"))
-
-	entries := []*entities.Entry{
-		newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
-	}
-
-	connMock := connectionMocks.NewConnection(t)
-	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    "",
-			ShowAll: true,
-		}).
-		Return(entries, nil).
-		Once()
-	connMock.On("RemoveDir", path).Return(errors.New("mock error")).Once()
-
-	useCaseRepos := &ftp.RemoveRepos{
-		Logger:     logger,
-		Connection: connMock,
-	}
-
-	useCaseInput := &ftp.RemoveInput{
-		Path: path,
-	}
-
-	useCase := ftp.Remove{}
-
-	// act
-	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
-
-	// assert
-	require.EqualError(t, err, "an internal error occurred: failed to remove directory")
-	assert.IsType(t, ftperrors.InternalErrorType, err)
-	assert.NoError(t, errors.Unwrap(err))
-}
-
-func Test_Remove_Execute_RemoveDirRecursively_ListError(t *testing.T) {
+func Test_Remove_Execute_ListError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 	logger.
 		ExpectError("failed to list directory").
-		WithField("path", assertlogging.Equal(path)).
-		WithError(assertlogging.EqualError("mock error"))
+		WithError(assertlogging.EqualError("mock error")).
+		WithField("remote-path", assertlogging.Equal(filepath.Join(remoteDirPath, "dir-1")))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
+		On("IsDir", ctx, remoteDirPath).
+		Return(true, nil).
+		Once()
+	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    "",
+			Path:    remoteDirPath,
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeLink, "link-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeDir, "dir-1", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    path,
+			Path:    filepath.Join(remoteDirPath, "dir-1"),
 			ShowAll: true,
 		}).
 		Return(nil, errors.New("mock error")).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "file-1")).
+		Return(nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "link-1")).
+		Return(nil).
 		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
@@ -406,8 +251,7 @@ func Test_Remove_Execute_RemoveDirRecursively_ListError(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path:      path,
-		Recursive: true,
+		Path: remoteDirPath,
 	}
 
 	useCase := ftp.Remove{}
@@ -421,63 +265,55 @@ func Test_Remove_Execute_RemoveDirRecursively_ListError(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_Remove_Execute_RemoveDirRecursively_RemoveFileError(t *testing.T) {
+func Test_Remove_Execute_Directory_RemoveFileError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 	logger.
 		ExpectError("failed to remove file").
-		WithField("path", assertlogging.Equal(filepath.Join(path, "dir-1", "file-2"))).
-		WithError(assertlogging.EqualError("mock error"))
-	logger.
-		ExpectError("failed to recursively remove directory").
-		WithField("path", assertlogging.Equal(filepath.Join(path, "dir-1"))).
-		WithError(
-			assertlogging.EqualError("an internal error occurred: failed to remove file"),
-			assertlogging.IsType(ftperrors.InternalErrorType),
-		)
+		WithError(assertlogging.EqualError("mock error")).
+		WithField("remote-path", assertlogging.Equal(filepath.Join(remoteDirPath, "dir-1", "file-2")))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
+		On("IsDir", ctx, remoteDirPath).
+		Return(true, nil).
+		Once()
+	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    "",
+			Path:    remoteDirPath,
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeLink, "link-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeDir, "dir-1", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    path,
+			Path:    filepath.Join(remoteDirPath, "dir-1"),
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeLink, "link-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "dir-1", 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-2", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    filepath.Join(path, "dir-1"),
-			ShowAll: true,
-		}).
-		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, ".", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "..", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		}, nil).
-		Once()
-
-	connMock.On("RemoveFile", filepath.Join(path, "file-1")).
+		On("RemoveFile", filepath.Join(remoteDirPath, "file-1")).
 		Return(nil).
 		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "link-1")).
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "link-1")).
 		Return(nil).
 		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "dir-1", "file-2")).
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "dir-1", "file-2")).
 		Return(errors.New("mock error")).
 		Once()
 
@@ -487,8 +323,7 @@ func Test_Remove_Execute_RemoveDirRecursively_RemoveFileError(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path:      path,
-		Recursive: true,
+		Path: remoteDirPath,
 	}
 
 	useCase := ftp.Remove{}
@@ -497,66 +332,69 @@ func Test_Remove_Execute_RemoveDirRecursively_RemoveFileError(t *testing.T) {
 	err := useCase.Execute(ctx, useCaseRepos, useCaseInput)
 
 	// assert
-	require.EqualError(t, err, "an internal error occurred: failed to recursively remove directory")
+	require.EqualError(t, err, "an internal error occurred: failed to remove file")
 	assert.IsType(t, ftperrors.InternalErrorType, err)
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_Remove_Execute_RemoveDirRecursively_RemoveDirError(t *testing.T) {
+func Test_Remove_Execute_RemoveDirError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
 	logger := assertlogging.NewLogger(t)
 	logger.
 		ExpectError("failed to remove directory").
-		WithField("path", assertlogging.Equal(filepath.Join(path, "dir-1"))).
-		WithError(assertlogging.EqualError("mock error"))
+		WithError(assertlogging.EqualError("mock error")).
+		WithField("remote-path", assertlogging.Equal(remoteDirPath))
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
+		On("IsDir", ctx, remoteDirPath).
+		Return(true, nil).
+		Once()
+	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    "",
+			Path:    remoteDirPath,
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeLink, "link-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeDir, "dir-1", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    path,
+			Path:    filepath.Join(remoteDirPath, "dir-1"),
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeFile, "file-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeLink, "link-1", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "dir-1", 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-2", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
-		On("List", ctx, &connection.ListOptions{
-			Path:    filepath.Join(path, "dir-1"),
-			ShowAll: true,
-		}).
-		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, ".", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeDir, "..", 167, "2022-01-12 16:23"),
-			newEntry(t, entities.EntryTypeFile, "file-2", 167, "2022-01-12 16:23"),
-		}, nil).
-		Once()
-
-	connMock.On("RemoveFile", filepath.Join(path, "file-1")).
-		Return(nil).
-		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "link-1")).
-		Return(nil).
-		Once()
-	connMock.On("RemoveFile", filepath.Join(path, "dir-1", "file-2")).
-		Return(nil).
-		Once()
-
-	connMock.On("RemoveDir", filepath.Join(path, "dir-1")).
+		On("RemoveDir", remoteDirPath).
 		Return(errors.New("mock error")).
+		Once()
+	connMock.
+		On("RemoveDir", filepath.Join(remoteDirPath, "dir-1")).
+		Return(nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "file-1")).
+		Return(nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "link-1")).
+		Return(nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "dir-1", "file-2")).
+		Return(nil).
 		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
@@ -565,8 +403,7 @@ func Test_Remove_Execute_RemoveDirRecursively_RemoveDirError(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path:      path,
-		Recursive: true,
+		Path: remoteDirPath,
 	}
 
 	useCase := ftp.Remove{}
@@ -580,7 +417,7 @@ func Test_Remove_Execute_RemoveDirRecursively_RemoveDirError(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-func Test_Remove_Execute_RemoveDirRecursively_UnknownError(t *testing.T) {
+func Test_Remove_Execute_UnknownError(t *testing.T) {
 	// arrange
 	ctx := context.Background()
 
@@ -588,22 +425,40 @@ func Test_Remove_Execute_RemoveDirRecursively_UnknownError(t *testing.T) {
 
 	connMock := connectionMocks.NewConnection(t)
 	connMock.
+		On("IsDir", ctx, remoteDirPath).
+		Return(true, nil).
+		Once()
+	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    "",
+			Path:    remoteDirPath,
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryTypeDir, path, 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryTypeFile, "file-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeLink, "link-1", sizeInBytes, "2022-01-12 16:23"),
+			newEntry(t, entities.EntryTypeDir, "dir-1", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
 		Once()
 	connMock.
 		On("List", ctx, &connection.ListOptions{
-			Path:    path,
+			Path:    filepath.Join(remoteDirPath, "dir-1"),
 			ShowAll: true,
 		}).
 		Return([]*entities.Entry{
-			newEntry(t, entities.EntryType(0), "file-1", 167, "2022-01-12 16:23"),
+			rootDir1,
+			rootDir2,
+			newEntry(t, entities.EntryType(0), "file-2", sizeInBytes, "2022-01-12 16:23"),
 		}, nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "file-1")).
+		Return(nil).
+		Once()
+	connMock.
+		On("RemoveFile", filepath.Join(remoteDirPath, "link-1")).
+		Return(nil).
 		Once()
 
 	useCaseRepos := &ftp.RemoveRepos{
@@ -612,8 +467,7 @@ func Test_Remove_Execute_RemoveDirRecursively_UnknownError(t *testing.T) {
 	}
 
 	useCaseInput := &ftp.RemoveInput{
-		Path:      path,
-		Recursive: true,
+		Path: remoteDirPath,
 	}
 
 	useCase := ftp.Remove{}

@@ -31,4 +31,6 @@ type Connection interface {
 	RemoveFile(path string) error
 	RemoveDir(path string) error
 	Move(oldPath string, newPath string) error
+	Download(ctx context.Context, path string) ([]byte, error)
+	IsDir(ctx context.Context, path string) (bool, error)
 }

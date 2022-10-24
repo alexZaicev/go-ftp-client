@@ -2,6 +2,7 @@ package ftp_test
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -22,7 +23,44 @@ const (
 var (
 	remotePathNoDir   = fileName
 	remotePathWithDir = fmt.Sprintf("%s/%s", remoteDirPath, fileName)
+
+	localPathWithDir = fmt.Sprintf("%s/%s", dirPath, fileName)
+
+	fileContent = randStringRunes(sizeInBytes)
+
+	letterRunes = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	rootDir1 = &entities.Entry{
+		Type:                 entities.EntryTypeDir,
+		Permissions:          "rwxrwxrwx",
+		Name:                 ".",
+		OwnerUser:            "user01",
+		OwnerGroup:           "group01",
+		SizeInBytes:          sizeInBytes,
+		NumHardLinks:         2,
+		LastModificationDate: time.Date(2022, 1, 12, 16, 23, 0, 0, time.UTC),
+	}
+	rootDir2 = &entities.Entry{
+		Type:                 entities.EntryTypeDir,
+		Permissions:          "rwxrwxrwx",
+		Name:                 "..",
+		OwnerUser:            "user01",
+		OwnerGroup:           "group01",
+		SizeInBytes:          sizeInBytes,
+		NumHardLinks:         2,
+		LastModificationDate: time.Date(2022, 1, 12, 16, 23, 0, 0, time.UTC),
+	}
 )
+
+// nolint:gosec // math/random is used, but linter thinks it's crypto/rand
+func randStringRunes(n uint64) []byte {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return b
+}
 
 func getEntries(t *testing.T) []*entities.Entry {
 	return []*entities.Entry{

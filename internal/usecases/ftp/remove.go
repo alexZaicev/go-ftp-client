@@ -16,8 +16,7 @@ type RemoveUseCase interface {
 }
 
 type RemoveInput struct {
-	Path      string
-	Recursive bool
+	Path string
 }
 
 type RemoveRepos struct {
@@ -29,69 +28,34 @@ type Remove struct {
 }
 
 func (u *Remove) Execute(ctx context.Context, repos *RemoveRepos, input *RemoveInput) error {
-	logger := repos.Logger.WithField("path", input.Path)
-
-	isDir, err := u.isDir(ctx, repos, input.Path)
+	isDir, err := repos.Connection.IsDir(ctx, input.Path)
 	if err != nil {
-		return err
+		repos.Logger.
+			WithError(err).
+			WithField("remote-path", input.Path).
+			Error("failed to check if entry is a directory")
+		return ftperrors.NewInternalError("failed to check if entry is a directory", nil)
 	}
 
 	if !isDir {
 		if removeErr := repos.Connection.RemoveFile(input.Path); removeErr != nil {
-			logger.WithError(removeErr).Error("failed to remove file")
+			repos.Logger.
+				WithError(removeErr).
+				WithField("remote-path", input.Path).
+				Error("failed to remove file")
 			return ftperrors.NewInternalError("failed to remove file", nil)
 		}
 
 		return nil
 	}
 
-	if input.Recursive {
-		// recursively remove contents of the provided directory; the directory itself
-		// will be removed in the later connection call.
-		if removeErr := u.removeRecursive(ctx, repos, input.Path); removeErr != nil {
-			return removeErr
-		}
-	}
-
-	if removeErr := repos.Connection.RemoveDir(input.Path); removeErr != nil {
-		logger.WithError(removeErr).Error("failed to remove directory")
-		return ftperrors.NewInternalError("failed to remove directory", nil)
+	// recursively remove contents of the provided directory; the directory itself
+	// will be removed in the later connection call.
+	if removeErr := u.removeRecursive(ctx, repos, input.Path); removeErr != nil {
+		return removeErr
 	}
 
 	return nil
-}
-
-func (u *Remove) isDir(ctx context.Context, repos *RemoveRepos, path string) (bool, error) {
-	parentDir, fileToRemove := filepath.Split(path)
-	entries, err := repos.Connection.List(ctx, &connection.ListOptions{
-		Path:    parentDir,
-		ShowAll: true,
-	})
-	if err != nil {
-		if parentDir == "" {
-			parentDir = "/"
-		}
-		repos.Logger.WithError(err).WithField("path", parentDir).Error("failed to list directory")
-		return false, ftperrors.NewInternalError("failed to list directory", nil)
-	}
-
-	var entry *entities.Entry
-	for _, e := range entries {
-		if e.Name == fileToRemove {
-			entry = e
-			break
-		}
-	}
-
-	if entry == nil {
-		msg := fmt.Sprintf("entry not found under [%s] path", path)
-		repos.Logger.WithField("path", path).Info(msg)
-		return false, ftperrors.NewNotFoundError(msg, nil)
-	}
-
-	isDir := entry.Type == entities.EntryTypeDir
-
-	return isDir, nil
 }
 
 func (u *Remove) removeRecursive(ctx context.Context, repos *RemoveRepos, path string) error {
@@ -102,18 +66,18 @@ func (u *Remove) removeRecursive(ctx context.Context, repos *RemoveRepos, path s
 	if listErr != nil {
 		repos.Logger.
 			WithError(listErr).
-			WithField("path", path).
+			WithField("remote-path", path).
 			Error("failed to list directory")
 		return ftperrors.NewInternalError("failed to list directory", nil)
 	}
 
 	for _, entry := range entries {
-		if entry.Name == "." || entry.Name == ".." {
+		if isRootDir(entry.Name) {
 			continue
 		}
 
 		entryPath := filepath.Join(path, entry.Name)
-		logger := repos.Logger.WithField("path", entryPath)
+		logger := repos.Logger.WithField("remote-path", entryPath)
 
 		switch entry.Type {
 		case entities.EntryTypeFile, entities.EntryTypeLink:
@@ -123,13 +87,7 @@ func (u *Remove) removeRecursive(ctx context.Context, repos *RemoveRepos, path s
 			}
 		case entities.EntryTypeDir:
 			if removeErr := u.removeRecursive(ctx, repos, entryPath); removeErr != nil {
-				logger.WithError(removeErr).Error("failed to recursively remove directory")
-				return ftperrors.NewInternalError("failed to recursively remove directory", nil)
-			}
-
-			if removeErr := repos.Connection.RemoveDir(entryPath); removeErr != nil {
-				logger.WithError(removeErr).Error("failed to remove directory")
-				return ftperrors.NewInternalError("failed to remove directory", nil)
+				return removeErr
 			}
 		default:
 			return ftperrors.NewUnknownError(
@@ -137,6 +95,14 @@ func (u *Remove) removeRecursive(ctx context.Context, repos *RemoveRepos, path s
 				nil,
 			)
 		}
+	}
+
+	if removeErr := repos.Connection.RemoveDir(path); removeErr != nil {
+		repos.Logger.
+			WithError(removeErr).
+			WithField("remote-path", path).
+			Error("failed to remove directory")
+		return ftperrors.NewInternalError("failed to remove directory", nil)
 	}
 
 	return nil

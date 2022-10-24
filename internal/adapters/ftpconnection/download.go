@@ -6,23 +6,23 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
-func (c *ServerConnection) Upload(ctx context.Context, options *connection.UploadOptions) error {
-	if options == nil {
-		return ftperrors.NewInvalidArgumentError("options", ftperrors.ErrMsgCannotBeNil)
+func (c *ServerConnection) Download(ctx context.Context, path string) ([]byte, error) {
+	if path == "" {
+		return nil, ftperrors.NewInvalidArgumentError("path", ftperrors.ErrMsgCannotBeBlank)
 	}
 
-	conn, err := c.cmdWithDataConn(ctx, 0, CommandStore, options.Path)
+	conn, err := c.cmdWithDataConn(ctx, 0, CommandRetrieve, path)
 	if err != nil {
-		return ftperrors.NewInternalError("failed to open data transfer connection", err)
+		return nil, ftperrors.NewInternalError("failed to open data transfer connection", err)
 	}
 
 	var multiErr *multierror.Error
 
-	if _, err = io.Copy(conn, options.FileReader); err != nil {
+	data, err := io.ReadAll(conn)
+	if err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
 
@@ -37,8 +37,8 @@ func (c *ServerConnection) Upload(ctx context.Context, options *connection.Uploa
 
 	err = multiErr.ErrorOrNil()
 	if err != nil {
-		return ftperrors.NewInternalError("failed to upload file", err)
+		return nil, ftperrors.NewInternalError("failed to download file", err)
 	}
 
-	return nil
+	return data, nil
 }

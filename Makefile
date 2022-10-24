@@ -50,8 +50,8 @@ fmt: vendor
         $(CMD_DIR) $(INTERNAL_DIR) $(FUNCTIONAL_TESTS_DIR)
 	goimports -local github.hpe.com -w $(CMD_DIR) $(INTERNAL_DIR) $(FUNCTIONAL_TESTS_DIR)
 
-.PHONY: golint
-golint:
+.PHONY: lint
+lint:
 	golangci-lint run --concurrency=2 --timeout=30m --max-issues-per-linter 0 --max-same-issues 0
 
 .PHONY: mocks
