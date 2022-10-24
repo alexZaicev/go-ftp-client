@@ -29,3 +29,5 @@ A simple CLI utility for executing FTP client without then need of installing ad
     - [ ] MsDOS entry parser
     - [ ] Hosted FTP entry parser
   - [ ] Missing functional tests
+  - [ ] Support missing FTP server features upon discovery
+  - [ ] Mechanism to disable features within config
