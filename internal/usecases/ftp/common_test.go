@@ -52,7 +52,7 @@ var (
 	}
 )
 
-// nolint:gosec // math/random is used, but linter thinks it's crypto/rand
+//nolint:gosec // math/random is used, but linter thinks it's crypto/rand
 func randStringRunes(n uint64) []byte {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)

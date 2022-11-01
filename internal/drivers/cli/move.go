@@ -13,9 +13,9 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-// nolint:dupl // similar to AddStatusCommand
+//nolint:dupl // similar to AddStatusCommand
 func AddMoveCommand(rootCMD *cobra.Command) error {
-	removeCMD := &cobra.Command{
+	moveCMD := &cobra.Command{
 		Use:   "mv",
 		Short: "Move file or directory.",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -27,7 +27,7 @@ func AddMoveCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -46,55 +46,28 @@ func AddMoveCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	removeCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := removeCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(moveCMD); err != nil {
 		return err
 	}
 
-	removeCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	removeCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	removeCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
-
-	removeCMD.Flags().BoolP(ArgRecursive, ArgRecursiveShort, false, "Recursive")
-
-	rootCMD.AddCommand(removeCMD)
+	rootCMD.AddCommand(moveCMD)
 	return nil
 }
 
 func parseMoveFlags(flagSet *pflag.FlagSet, args []string) (*move.CmdMoveInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := flagSet.GetString(ArgUser)
-	if err != nil {
-		return nil, err
-	}
-
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	verbose, err := flagSet.GetBool(ArgVerbose)
-	if err != nil {
-		return nil, err
-	}
-
-	// nolint:gomnd // expecting 2 args for command
+	//nolint:gomnd // expecting 2 args for command
 	if len(args) != 2 {
 		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid from and to paths")
 	}
 
 	return &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		OldPath:  args[0],
-		NewPath:  args[1],
+		Config:  config,
+		OldPath: args[0],
+		NewPath: args[1],
 	}, nil
 }

@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
@@ -24,12 +23,7 @@ const (
 )
 
 type CmdUploadInput struct {
-	Address  string
-	User     string
-	Password string
-	Verbose  bool
-	Timeout  time.Duration
-
+	Config         ftpclient.ConnectorConfig
 	FilePath       string
 	RemoteFilePath string
 	Recursive      bool
@@ -55,16 +49,7 @@ func PerformUploadFile(ctx context.Context, logger logging.Logger, deps *Depende
 		return err
 	}
 
-	options := &ftpclient.ConnectorOptions{
-		Address:  input.Address,
-		User:     input.User,
-		Password: input.Password,
-		Verbose:  input.Verbose,
-	}
-	conn, err := deps.Connector.Connect(
-		ctx,
-		options,
-	)
+	conn, err := deps.Connector.Connect(ctx, input.Config)
 	if err != nil {
 		logger.WithError(err).Error("failed to connect to server")
 		return err

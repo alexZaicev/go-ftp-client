@@ -85,7 +85,7 @@ func Test_ServerConnection_Move_InvalidArgument(t *testing.T) {
 	}
 }
 
-// nolint:dupl // similar to Test_ServerConnection_Login_UserCmdError
+//nolint:dupl // similar to Test_ServerConnection_Login_UserCmdError
 func Test_ServerConnection_Move_PrepareCmdError(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)
@@ -108,7 +108,7 @@ func Test_ServerConnection_Move_PrepareCmdError(t *testing.T) {
 	assert.EqualError(t, errors.Unwrap(err), "mock error")
 }
 
-// nolint:dupl // similar to Test_ServerConnection_Login_PasswordError
+//nolint:dupl // similar to Test_ServerConnection_Login_PasswordError
 func Test_ServerConnection_Move_MoveCmdError(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)

@@ -13,9 +13,9 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-// nolint:dupl // similar to AddStatusCommand
+//nolint:dupl // similar to AddStatusCommand
 func AddMkdirCommand(rootCMD *cobra.Command) error {
-	// nolint:dupl // single use case command are very similar
+	//nolint:dupl // single use case command are very similar
 	mkdirCMD := &cobra.Command{
 		Use:   "mkdir",
 		Short: "Create directory(ies).",
@@ -28,7 +28,7 @@ func AddMkdirCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -47,37 +47,16 @@ func AddMkdirCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	mkdirCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := mkdirCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(mkdirCMD); err != nil {
 		return err
 	}
-
-	mkdirCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	mkdirCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	mkdirCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
 
 	rootCMD.AddCommand(mkdirCMD)
 	return nil
 }
 
 func parseMkdirFlags(flagSet *pflag.FlagSet, args []string) (*mkdir.CmdMkdirInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := flagSet.GetString(ArgUser)
-	if err != nil {
-		return nil, err
-	}
-
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	verbose, err := flagSet.GetBool(ArgVerbose)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +66,7 @@ func parseMkdirFlags(flagSet *pflag.FlagSet, args []string) (*mkdir.CmdMkdirInpu
 	}
 
 	return &mkdir.CmdMkdirInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		Path:     args[0],
+		Config: config,
+		Path:   args[0],
 	}, nil
 }

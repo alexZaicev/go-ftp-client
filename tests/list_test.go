@@ -97,7 +97,7 @@ func (s *ListTestSuite) Test_ListTest_Happy() {
 	}
 }
 
-// nolint:dupl // similar to Test_StatusTestSuite_InvalidParameters
+//nolint:dupl // similar to Test_StatusTestSuite_InvalidParameters
 func (s *ListTestSuite) Test_ListTestSuite_InvalidParameters() {
 	testCases := []struct {
 		name                    string

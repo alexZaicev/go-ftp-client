@@ -48,12 +48,16 @@ func (f fieldEqual) String() string {
 }
 
 // Equal asserts that a log field value is equal to the given expected value.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func Equal(expected interface{}) fieldEqual {
 	return fieldEqual{expected: expected}
 }
 
 // Equalf asserts that a log field value is equal to the given expected string value with arguments
 // substituted in.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func Equalf(expected string, args ...interface{}) fieldEqual {
 	expected = fmt.Sprintf(expected, args...)
 	return Equal(expected)
@@ -73,6 +77,8 @@ func (f fieldNotEqual) String() string {
 }
 
 // NotEqual asserts that a log field value is not equal to the given expected value.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func NotEqual(expected interface{}) fieldNotEqual {
 	return fieldNotEqual{expected: expected}
 }
@@ -98,12 +104,16 @@ func (f fieldEqualError) String() string {
 
 // EqualError asserts that a log field value is an error with a message equal to the given expected
 // value.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func EqualError(expected string) fieldEqualError {
 	return fieldEqualError{expected: expected}
 }
 
 // EqualErrorf asserts that a log field value is an error with a message equal to the given expected
 // value with arguments substituted in.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func EqualErrorf(expected string, args ...interface{}) fieldEqualError {
 	expected = fmt.Sprintf(expected, args...)
 	return EqualError(expected)
@@ -123,6 +133,8 @@ func (f fieldIsType) String() string {
 }
 
 // IsType asserts that a log field value matched the type of the given expected value.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func IsType(expected interface{}) fieldIsType {
 	return fieldIsType{expected: expected}
 }
@@ -155,6 +167,8 @@ func (f fieldRegexp) String() string {
 }
 
 // Regexp asserts that a log field value is a string that matches the given regular expression.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func Regexp(expected *regexp.Regexp) fieldRegexp {
 	return fieldRegexp{expected: expected}
 }
@@ -176,6 +190,8 @@ func (f fieldTrue) String() string {
 }
 
 // True asserts that a log field value is true.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func True() fieldTrue {
 	return fieldTrue{}
 }
@@ -197,6 +213,8 @@ func (f fieldFalse) String() string {
 }
 
 // False asserts that a log field value is false.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func False() fieldFalse {
 	return fieldFalse{}
 }
@@ -213,6 +231,8 @@ func (f fieldEmpty) String() string {
 }
 
 // Empty asserts that a log field value is empty.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func Empty() fieldEmpty {
 	return fieldEmpty{}
 }
@@ -229,6 +249,8 @@ func (f fieldNil) String() string {
 }
 
 // Nil asserts that a log field value is nil.
+//
+//nolint:revive // private type is passed back into public functions so is safe to ignore
 func Nil() fieldNil {
 	return fieldNil{}
 }

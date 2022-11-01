@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/domain/connection"
@@ -12,13 +11,8 @@ import (
 )
 
 type CmdRemoveInput struct {
-	Address  string
-	User     string
-	Password string
-	Verbose  bool
-	Timeout  time.Duration
-
-	Path string
+	Config ftpclient.ConnectorConfig
+	Path   string
 }
 
 type Dependencies struct {
@@ -28,16 +22,7 @@ type Dependencies struct {
 }
 
 func PerformRemove(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdRemoveInput) (err error) {
-	options := &ftpclient.ConnectorOptions{
-		Address:  input.Address,
-		User:     input.User,
-		Password: input.Password,
-		Verbose:  input.Verbose,
-	}
-	conn, err := deps.Connector.Connect(
-		ctx,
-		options,
-	)
+	conn, err := deps.Connector.Connect(ctx, input.Config)
 	if err != nil {
 		logger.WithError(err).Error("failed to connect to server")
 		return err

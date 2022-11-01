@@ -17,7 +17,7 @@ import (
 	connectionMocks "github.com/alexZaicev/go-ftp-client/mocks/domain/connection"
 )
 
-// nolint:dupl // test case expectations can be similar
+//nolint:dupl // test case expectations can be similar
 func Test_ListFiles_Execute_Success(t *testing.T) {
 	testCases := []struct {
 		name            string

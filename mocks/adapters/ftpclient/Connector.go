@@ -17,13 +17,13 @@ type Connector struct {
 	mock.Mock
 }
 
-// Connect provides a mock function with given fields: ctx, options
-func (_m *Connector) Connect(ctx context.Context, options *ftpclient.ConnectorOptions) (connection.Connection, error) {
-	ret := _m.Called(ctx, options)
+// Connect provides a mock function with given fields: ctx, config
+func (_m *Connector) Connect(ctx context.Context, config ftpclient.ConnectorConfig) (connection.Connection, error) {
+	ret := _m.Called(ctx, config)
 
 	var r0 connection.Connection
-	if rf, ok := ret.Get(0).(func(context.Context, *ftpclient.ConnectorOptions) connection.Connection); ok {
-		r0 = rf(ctx, options)
+	if rf, ok := ret.Get(0).(func(context.Context, ftpclient.ConnectorConfig) connection.Connection); ok {
+		r0 = rf(ctx, config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(connection.Connection)
@@ -31,8 +31,8 @@ func (_m *Connector) Connect(ctx context.Context, options *ftpclient.ConnectorOp
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *ftpclient.ConnectorOptions) error); ok {
-		r1 = rf(ctx, options)
+	if rf, ok := ret.Get(1).(func(context.Context, ftpclient.ConnectorConfig) error); ok {
+		r1 = rf(ctx, config)
 	} else {
 		r1 = ret.Error(1)
 	}

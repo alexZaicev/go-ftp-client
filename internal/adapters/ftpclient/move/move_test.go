@@ -38,15 +38,16 @@ func Test_PerformMove_Success(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -74,13 +75,15 @@ func Test_PerformMove_Success(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		OldPath:  oldPath,
-		NewPath:  newPath,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
+		OldPath: oldPath,
+		NewPath: newPath,
 	}
 
 	// act
@@ -99,15 +102,16 @@ func Test_PerformMove_ConnectError(t *testing.T) {
 		ExpectError("failed to connect to server").
 		WithError(assertlogging.EqualError("mock error"))
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(nil, errors.New("mock error")).
 		Once()
 
@@ -121,13 +125,15 @@ func Test_PerformMove_ConnectError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		OldPath:  oldPath,
-		NewPath:  newPath,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
+		OldPath: oldPath,
+		NewPath: newPath,
 	}
 
 	// act
@@ -151,15 +157,16 @@ func Test_PerformMove_ConnectStopError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(errors.New("mock error")).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -186,13 +193,15 @@ func Test_PerformMove_ConnectStopError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		OldPath:  oldPath,
-		NewPath:  newPath,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
+		OldPath: oldPath,
+		NewPath: newPath,
 	}
 
 	// act
@@ -212,15 +221,16 @@ func Test_PerformMove_UseCaseError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -247,13 +257,15 @@ func Test_PerformMove_UseCaseError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &move.CmdMoveInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
-		OldPath:  oldPath,
-		NewPath:  newPath,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
+		OldPath: oldPath,
+		NewPath: newPath,
 	}
 
 	// act

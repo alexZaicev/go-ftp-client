@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -19,12 +18,7 @@ import (
 )
 
 type CmdListInput struct {
-	Address  string
-	User     string
-	Password string
-	Verbose  bool
-	Timeout  time.Duration
-
+	Config   ftpclient.ConnectorConfig
 	ShowAll  bool
 	Path     string
 	SortType models.SortType
@@ -37,16 +31,7 @@ type Dependencies struct {
 }
 
 func PerformListFiles(ctx context.Context, logger logging.Logger, deps *Dependencies, input *CmdListInput) (err error) {
-	options := &ftpclient.ConnectorOptions{
-		Address:  input.Address,
-		User:     input.User,
-		Password: input.Password,
-		Verbose:  input.Verbose,
-	}
-	conn, err := deps.Connector.Connect(
-		ctx,
-		options,
-	)
+	conn, err := deps.Connector.Connect(ctx, input.Config)
 	if err != nil {
 		logger.WithError(err).Error("failed to connect to server")
 		return err

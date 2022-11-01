@@ -14,7 +14,7 @@ import (
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
 
-// nolint:dupl // similar to Test_ServerConnection_RemoveFile_Success
+//nolint:dupl // similar to Test_ServerConnection_RemoveFile_Success
 func Test_ServerConnection_Cd_Success(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
@@ -57,7 +57,7 @@ func Test_ServerConnection_Cd_NotFoundError(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-// nolint:dupl // similar to Test_ServerConnection_RemoveFile_CmdError
+//nolint:dupl // similar to Test_ServerConnection_RemoveFile_CmdError
 func Test_ServerConnection_Cd_CmdError(t *testing.T) {
 	tcpConn := ftpConnectionMocks.NewConn(t)
 	dialer := ftpConnectionMocks.NewDialer(t)
