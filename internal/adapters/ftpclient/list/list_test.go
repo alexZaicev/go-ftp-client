@@ -43,15 +43,16 @@ func Test_PerformListFiles_Success(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -79,11 +80,13 @@ func Test_PerformListFiles_Success(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,
@@ -115,15 +118,16 @@ func Test_PerformListFiles_NotFoundError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -151,11 +155,13 @@ func Test_PerformListFiles_NotFoundError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,
@@ -174,15 +180,16 @@ func Test_PerformListFiles_ConnectionError(t *testing.T) {
 		ExpectError("failed to connect to server").
 		WithError(assertlogging.EqualError("mock error"))
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(nil, errors.New("mock error")).
 		Once()
 
@@ -196,11 +203,13 @@ func Test_PerformListFiles_ConnectionError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,
@@ -224,15 +233,16 @@ func Test_PerformListFiles_ConnectionStopError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(errors.New("mock error")).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -260,11 +270,13 @@ func Test_PerformListFiles_ConnectionStopError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,
@@ -283,15 +295,16 @@ func Test_PerformListFiles_SortTypeConvertError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -305,11 +318,13 @@ func Test_PerformListFiles_SortTypeConvertError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortType("not-a-valid-sort-type"),
@@ -329,15 +344,16 @@ func Test_PerformListFiles_UseCaseError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -365,11 +381,13 @@ func Test_PerformListFiles_UseCaseError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,
@@ -398,15 +416,16 @@ func Test_PerformListFiles_EntryTypeConvertError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -434,11 +453,13 @@ func Test_PerformListFiles_EntryTypeConvertError(t *testing.T) {
 		OutWriter: buffer,
 	}
 	input := &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: password,
-		Verbose:  true,
-		Timeout:  timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		Path:     path,
 		ShowAll:  true,
 		SortType: models.SortTypeName,

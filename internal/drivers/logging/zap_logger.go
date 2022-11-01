@@ -108,7 +108,7 @@ func (z *ZapJSONLogger) WithField(key string, value interface{}) Logger {
 // ensuring consistency of error message keys. It will also unwrap the error, unlike a
 // normal WithField call.
 func (z *ZapJSONLogger) WithError(err error) Logger {
-	unwrapper := unwrapInfoExtractor(1000) // nolint:gomnd // arbitrary exit condition to avoid infinite loop
+	unwrapper := unwrapInfoExtractor(1000) //nolint:gomnd // arbitrary exit condition to avoid infinite loop
 	msg := unwrapper(err)
 	return z.WithField(ErrKey, msg)
 }

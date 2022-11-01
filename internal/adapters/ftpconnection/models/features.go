@@ -7,6 +7,7 @@ const (
 	FeaturePRET = "PRET"
 	FeatureUTF8 = "UTF8"
 	FeatureEPSV = "EPSV"
+	FeatureAUTH = "AUTH"
 )
 
 type ServerFeatures struct {
@@ -16,6 +17,7 @@ type ServerFeatures struct {
 	SupportPRET bool
 	SupportEPSV bool
 	SupportUTF8 bool
+	AuthTLS     bool
 }
 
 func NewServerFeatures(featureMap map[string]string) *ServerFeatures {
@@ -31,5 +33,10 @@ func NewServerFeatures(featureMap map[string]string) *ServerFeatures {
 	_, sf.SupportMFMT = featureMap[FeatureMFMT]
 	_, sf.SupportEPSV = featureMap[FeatureEPSV]
 	_, sf.SupportUTF8 = featureMap[FeatureUTF8]
+
+	if mode, ok := featureMap[FeatureAUTH]; ok && mode == "TLS" {
+		sf.AuthTLS = true
+	}
+
 	return sf
 }

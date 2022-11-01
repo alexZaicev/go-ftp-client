@@ -13,7 +13,7 @@ import (
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
 
-// nolint:dupl // similar to Test_ServerConnection_RemoveDir_Success
+//nolint:dupl // similar to Test_ServerConnection_RemoveDir_Success
 func Test_ServerConnection_RemoveFile_Success(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)
@@ -56,7 +56,7 @@ func Test_ServerConnection_RemoveFile_InvalidArgument(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-// nolint:dupl // similar to Test_ServerConnection_Cd_CmdError
+//nolint:dupl // similar to Test_ServerConnection_Cd_CmdError
 func Test_ServerConnection_RemoveFile_CmdError(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)
@@ -79,7 +79,7 @@ func Test_ServerConnection_RemoveFile_CmdError(t *testing.T) {
 	assert.EqualError(t, errors.Unwrap(err), "mock error")
 }
 
-// nolint:dupl // similar to Test_ServerConnection_RemoveFile_Success
+//nolint:dupl // similar to Test_ServerConnection_RemoveFile_Success
 func Test_ServerConnection_RemoveDir_Success(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)
@@ -122,7 +122,7 @@ func Test_ServerConnection_RemoveDir_InvalidArgument(t *testing.T) {
 	assert.NoError(t, errors.Unwrap(err))
 }
 
-// nolint:dupl // similar to Test_ServerConnection_Cd_CmdError
+//nolint:dupl // similar to Test_ServerConnection_Cd_CmdError
 func Test_ServerConnection_RemoveDir_CmdError(t *testing.T) {
 	// arrange
 	tcpConn := ftpConnectionMocks.NewConn(t)

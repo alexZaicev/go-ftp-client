@@ -15,7 +15,7 @@ import (
 )
 
 func AddListCommand(rootCMD *cobra.Command) error {
-	// nolint:dupl // single use case command are very similar
+	//nolint:dupl // single use case command are very similar
 	listCMD := &cobra.Command{
 		Use:   "ls",
 		Short: "List files in directory.",
@@ -28,7 +28,7 @@ func AddListCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -47,15 +47,9 @@ func AddListCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	listCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := listCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(listCMD); err != nil {
 		return err
 	}
-
-	listCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	listCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	listCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
 
 	listCMD.Flags().String(ArgSort, string(models.SortTypeName), "Sort returned entries by NAME/SIZE/DATE")
 
@@ -66,22 +60,7 @@ func AddListCommand(rootCMD *cobra.Command) error {
 }
 
 func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := flagSet.GetString(ArgUser)
-	if err != nil {
-		return nil, err
-	}
-
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	verbose, err := flagSet.GetBool(ArgVerbose)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +88,7 @@ func parseListFlags(flagSet *pflag.FlagSet, args []string) (*list.CmdListInput, 
 	}
 
 	return &list.CmdListInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
+		Config:   config,
 		ShowAll:  showAll,
 		Path:     args[0],
 		SortType: models.SortType(sortTypeStr),

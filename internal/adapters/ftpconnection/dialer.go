@@ -22,7 +22,9 @@ type dialer struct {
 
 func newDialer() *dialer {
 	return &dialer{
-		dialer: new(net.Dialer),
+		dialer: &net.Dialer{
+			Timeout: defaultConnectionTimeout,
+		},
 	}
 }
 
@@ -35,11 +37,12 @@ func (d *dialer) DialContext(ctx context.Context, network, address string) (net.
 }
 
 func (d *dialer) DialContextTLS(ctx context.Context, network, address string, tlsConfig *tls.Config) (net.Conn, error) {
-	tlsDialer := &tls.Dialer{
-		NetDialer: d.dialer,
-		Config:    tlsConfig,
+	conn, err := d.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
 	}
-	return tlsDialer.DialContext(ctx, network, address)
+	tlsConn := tls.Client(conn, tlsConfig)
+	return tlsConn, nil
 }
 
 func DialContext(ctx context.Context, address string, options ...Option) (connection.Connection, error) {

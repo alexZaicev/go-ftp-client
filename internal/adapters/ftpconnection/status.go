@@ -8,6 +8,7 @@ import (
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
 )
 
+//nolint:gocyclo // parsing status lines can be quite long
 func (c *ServerConnection) Status() (*entities.Status, error) {
 	_, msg, err := c.cmd(models.StatusSystem, models.CommandStatus)
 	if err != nil {
@@ -15,6 +16,9 @@ func (c *ServerConnection) Status() (*entities.Status, error) {
 	}
 
 	status := &entities.Status{}
+
+	var connEncrypted bool
+	var dataConnEncrypted bool
 
 	lines := strings.Split(msg, "\n")
 	for _, line := range lines {
@@ -41,7 +45,20 @@ func (c *ServerConnection) Status() (*entities.Status, error) {
 			}
 			continue
 		}
-		// TODO: add status check TLS
+
+		if strings.Contains(line, "control connection") && strings.Contains(line, "encrypted") {
+			connEncrypted = true
+			continue
+		}
+
+		if strings.Contains(line, "data connection") && strings.Contains(line, "encrypted") {
+			dataConnEncrypted = true
+			continue
+		}
+	}
+
+	if connEncrypted && dataConnEncrypted {
+		status.TLSEnabled = c.features.AuthTLS
 	}
 
 	_, msg, err = c.cmd(models.StatusName, models.CommandSystem)

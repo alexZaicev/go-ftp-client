@@ -83,7 +83,7 @@ func (s *StatusTestSuite) Test_StatusTest_Happy() {
 	assert.Equal(s.T(), expectedOutBuffer.String(), result)
 }
 
-// nolint:dupl // similar to Test_ListTestSuite_InvalidParameters
+//nolint:dupl // similar to Test_ListTestSuite_InvalidParameters
 func (s *StatusTestSuite) Test_StatusTestSuite_InvalidParameters() {
 	testCases := []struct {
 		name                    string

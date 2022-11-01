@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -16,7 +15,7 @@ import (
 )
 
 func AddDownloadCommand(rootCMD *cobra.Command) error {
-	removeCMD := &cobra.Command{
+	downloadCMD := &cobra.Command{
 		Use:   "download",
 		Short: "Download file(s) from the server.",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -28,7 +27,7 @@ func AddDownloadCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -48,57 +47,32 @@ func AddDownloadCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	removeCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := removeCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(downloadCMD); err != nil {
 		return err
 	}
 
-	removeCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	removeCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	removeCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
-
-	rootCMD.AddCommand(removeCMD)
+	rootCMD.AddCommand(downloadCMD)
 	return nil
 }
 
 func parseDownloadFlags(flagSet *pflag.FlagSet, args []string) (*download.CmdDownloadInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := flagSet.GetString(ArgUser)
-	if err != nil {
-		return nil, err
-	}
-
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	verbose, err := flagSet.GetBool(ArgVerbose)
-	if err != nil {
-		return nil, err
-	}
-
-	// nolint:gomnd // expecting 2 args for command
+	//nolint:gomnd // expecting 2 args for command
 	if len(args) != 2 {
 		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid remote file and download paths")
 	}
 
-	filePath, err := filepath.Abs(args[1])
+	filePath, err := getFileAbsPath(args[1])
 	if err != nil {
 		return nil, ftperrors.NewInvalidArgumentError("args", err.Error())
 	}
 
 	return &download.CmdDownloadInput{
-		Address:    address,
-		User:       user,
-		Password:   pwd,
-		Verbose:    verbose,
-		Timeout:    defaultConnectionTimeout,
+		Config:     config,
 		RemotePath: args[0],
 		Path:       filePath,
 	}, nil

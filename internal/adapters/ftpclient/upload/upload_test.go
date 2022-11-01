@@ -46,15 +46,16 @@ func Test_PerformUploadFile_Success(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -97,11 +98,13 @@ func Test_PerformUploadFile_Success(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -119,15 +122,16 @@ func Test_PerformUploadFile_Recursive_Success(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -194,11 +198,13 @@ func Test_PerformUploadFile_Recursive_Success(t *testing.T) {
 	}
 
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       absFilePath,
 		RemoteFilePath: remotePath,
 		Recursive:      true,
@@ -224,11 +230,13 @@ func Test_PerformUploadFile_FileOpenError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -257,11 +265,13 @@ func Test_PerformUploadFile_NonRecursiveDirUploadError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -290,11 +300,13 @@ func Test_PerformUploadFile_RecursiveNonDirUploadError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 		Recursive:      true,
@@ -328,11 +340,13 @@ func Test_PerformUploadFile_WalkError(t *testing.T) {
 	}
 
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       absFilePath,
 		RemoteFilePath: remotePath,
 		Recursive:      true,
@@ -367,11 +381,13 @@ func Test_PerformUploadFile_RecursiveFileOpenErrorError(t *testing.T) {
 	}
 
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       absFilePath,
 		RemoteFilePath: remotePath,
 		Recursive:      true,
@@ -391,15 +407,16 @@ func Test_PerformUploadFile_ConnectionError(t *testing.T) {
 		ExpectError("failed to connect to server").
 		WithError(assertlogging.EqualError("mock error"))
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(nil, errors.New("mock error")).
 		Once()
 
@@ -415,11 +432,13 @@ func Test_PerformUploadFile_ConnectionError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -440,15 +459,16 @@ func Test_PerformUploadFile_ConnectionStopError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(errors.New("mock error")).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -491,11 +511,13 @@ func Test_PerformUploadFile_ConnectionStopError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -512,15 +534,16 @@ func Test_PerformUploadFile_MkdirError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -549,11 +572,13 @@ func Test_PerformUploadFile_MkdirError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}
@@ -570,15 +595,16 @@ func Test_PerformUploadFile_UploadError(t *testing.T) {
 	ftpConnMock := connectionMocks.NewConnection(t)
 	ftpConnMock.On("Stop").Return(nil).Once()
 
-	options := &ftpclient.ConnectorOptions{
+	config := ftpclient.ConnectorConfig{
 		Address:  address,
 		User:     user,
 		Password: password,
 		Verbose:  true,
+		Timeout:  timeout,
 	}
 	connMock := ftpclientMocks.NewConnector(t)
 	connMock.
-		On("Connect", ctx, options).
+		On("Connect", ctx, config).
 		Return(ftpConnMock, nil).
 		Once()
 
@@ -616,11 +642,14 @@ func Test_PerformUploadFile_UploadError(t *testing.T) {
 		MkdirUseCase:  mkdirUseCaseMock,
 	}
 	input := &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       password,
-		Verbose:        true,
-		Timeout:        timeout,
+		Config: ftpclient.ConnectorConfig{
+			Address:  address,
+			User:     user,
+			Password: password,
+			Verbose:  true,
+			Timeout:  timeout,
+		},
+
 		FilePath:       filePath,
 		RemoteFilePath: remoteFilePath,
 	}

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -11,6 +10,7 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient"
 	"github.com/alexZaicev/go-ftp-client/internal/adapters/ftpclient/upload"
 	ftperrors "github.com/alexZaicev/go-ftp-client/internal/domain/errors"
+	"github.com/alexZaicev/go-ftp-client/internal/drivers/cli/models"
 	"github.com/alexZaicev/go-ftp-client/internal/drivers/logging"
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
@@ -28,7 +28,7 @@ func AddUploadCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -50,74 +50,46 @@ func AddUploadCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	uploadCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := uploadCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(uploadCMD); err != nil {
 		return err
 	}
 
-	uploadCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	uploadCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	uploadCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
-
-	uploadCMD.Flags().StringP(ArgFile, ArgFileShort, "", "Path to file for upload")
-	if err := uploadCMD.MarkFlagRequired(ArgFile); err != nil {
-		return err
-	}
-
-	uploadCMD.Flags().BoolP(ArgRecursive, ArgRecursiveShort, false, "Recursively upload directory tree")
+	uploadCMD.Flags().BoolP(
+		models.ArgRecursive.Long,
+		models.ArgRecursive.Short,
+		false,
+		"Recursively upload directory tree",
+	)
 
 	rootCMD.AddCommand(uploadCMD)
 	return nil
 }
 
 func parseUploadFlags(flagSet *pflag.FlagSet, args []string) (*upload.CmdUploadInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := flagSet.GetString(ArgUser)
+	recursive, err := flagSet.GetBool(models.ArgRecursive.Long)
 	if err != nil {
 		return nil, err
 	}
 
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
+	//nolint:gomnd // expecting 2 args for command
+	if len(args) != 2 {
+		return nil, ftperrors.NewInvalidArgumentError("args", "should contain valid path to file and remote path")
 	}
 
-	verbose, err := flagSet.GetBool(ArgVerbose)
+	filePath, err := getFileAbsPath(args[0])
 	if err != nil {
-		return nil, err
-	}
-
-	filePath, err := flagSet.GetString(ArgFile)
-	if err != nil {
-		return nil, err
-	}
-	filePath, err = filepath.Abs(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	recursive, err := flagSet.GetBool(ArgRecursive)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(args) != 1 {
-		return nil, ftperrors.NewInvalidArgumentError("args", "should contain exactly one valid path")
+		return nil, ftperrors.NewInvalidArgumentError("args", err.Error())
 	}
 
 	return &upload.CmdUploadInput{
-		Address:        address,
-		User:           user,
-		Password:       pwd,
-		Verbose:        verbose,
-		Timeout:        defaultConnectionTimeout,
+		Config:         config,
 		FilePath:       filePath,
 		Recursive:      recursive,
-		RemoteFilePath: args[0],
+		RemoteFilePath: args[1],
 	}, nil
 }

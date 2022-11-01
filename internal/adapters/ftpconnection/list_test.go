@@ -22,7 +22,7 @@ import (
 	ftpConnectionMocks "github.com/alexZaicev/go-ftp-client/mocks/adapters/ftpconnection"
 )
 
-// nolint:funlen // test case can get a bit large
+//nolint:funlen // test case can get a bit large
 func Test_ServerConnection_List_Success(t *testing.T) {
 	testCases := []struct {
 		name    string
@@ -140,7 +140,7 @@ func Test_ServerConnection_List_Success(t *testing.T) {
 	}
 }
 
-// nolint:funlen // test case can get a bit large
+//nolint:funlen // test case can get a bit large
 func Test_ServerConnection_List_WithTLS_Success(t *testing.T) {
 	ctx := context.Background()
 

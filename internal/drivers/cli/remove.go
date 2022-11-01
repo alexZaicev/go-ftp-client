@@ -13,7 +13,7 @@ import (
 	"github.com/alexZaicev/go-ftp-client/internal/usecases/ftp"
 )
 
-// nolint:dupl // similar to AddStatusCommand
+//nolint:dupl // similar to AddStatusCommand
 func AddRemoveCommand(rootCMD *cobra.Command) error {
 	removeCMD := &cobra.Command{
 		Use:   "rm",
@@ -27,7 +27,7 @@ func AddRemoveCommand(rootCMD *cobra.Command) error {
 			}
 
 			logger, err := logging.NewZapJSONLogger(
-				getLogLevel(input.Verbose),
+				getLogLevel(input.Config.Verbose),
 				cmd.OutOrStdout(),
 				cmd.ErrOrStderr(),
 			)
@@ -46,39 +46,16 @@ func AddRemoveCommand(rootCMD *cobra.Command) error {
 		},
 	}
 
-	removeCMD.Flags().StringP(ArgAddress, ArgAddressShort, "", "Connection address for the FTP server (e.g. ftp.example.com:21)")
-	if err := removeCMD.MarkFlagRequired(ArgAddress); err != nil {
+	if err := setConnectionFlags(removeCMD); err != nil {
 		return err
 	}
-
-	removeCMD.Flags().StringP(ArgUser, ArgUserShort, defaultUserAccount, "Username for the FTP server user")
-	removeCMD.Flags().StringP(ArgPassword, ArgPasswordShort, defaultUserPassword, "Password for the FTP server user")
-
-	removeCMD.Flags().BoolP(ArgVerbose, ArgVerboseShort, false, "Verbose output")
-
-	removeCMD.Flags().BoolP(ArgRecursive, ArgRecursiveShort, false, "Recursive")
 
 	rootCMD.AddCommand(removeCMD)
 	return nil
 }
 
 func parseRemoveFlags(flagSet *pflag.FlagSet, args []string) (*remove.CmdRemoveInput, error) {
-	address, err := flagSet.GetString(ArgAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := flagSet.GetString(ArgUser)
-	if err != nil {
-		return nil, err
-	}
-
-	pwd, err := flagSet.GetString(ArgPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	verbose, err := flagSet.GetBool(ArgVerbose)
+	config, err := parseConnectionFlags(flagSet)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +65,7 @@ func parseRemoveFlags(flagSet *pflag.FlagSet, args []string) (*remove.CmdRemoveI
 	}
 
 	return &remove.CmdRemoveInput{
-		Address:  address,
-		User:     user,
-		Password: pwd,
-		Verbose:  verbose,
-		Timeout:  defaultConnectionTimeout,
-		Path:     args[0],
+		Config: config,
+		Path:   args[0],
 	}, nil
 }
